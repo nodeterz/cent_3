@@ -1,0 +1,78 @@
+\documentclass{letter}
+\usepackage{amsmath}
+\begin{document}
+	\begin{equation}
+	\begin{split}
+		U_{tot}  = &\sum_{i=1}^{N} [E_i^0 + \chi_i q_i + \tilde{\chi_i}\tilde{q_i }+ \frac{1}{2}(J_{ii}+\frac{2\gamma_{ii}}{\sqrt{\pi}})q_i^2 + \frac{1}{2}(\tilde{J_{ii}}+\frac{2\tilde{\gamma_{ii}}}{\sqrt{\pi}})\tilde{q_i}^2+\frac{q_i\tilde{q_i }(\gamma_{ii}'+\gamma_{ii}'')}{\sqrt{\pi}}]\\ 
+		&+\sum_{i>j} q_iq_j\frac{erf(\gamma_{ij}r_{ij})}{r_{ij}} + \sum_{i>j} q_i\tilde{q_j}\frac{erf(\gamma_{ij}'r_{ij})}{r_{ij}}\\
+		 &+\sum_{i>j}\tilde{q_i }q_j \frac{erf(\gamma_{ij}''r_{ij})}{r_{ij}} + \sum_{i>j}\tilde{q_i}\tilde{q_j} \frac{erf(\tilde{\gamma_{ij}}r_{ij})}{r_{ij}}
+	\end{split}
+	\end{equation}
+	\newline
+	\begin{equation}
+		\begin{split}
+			&\frac{\partial U_{tot}}{\partial q_i}=0 ; \forall i = 1 ,...,N \\
+			& = \chi_i 
+			+ (J_{ii}+\frac{2\gamma_{ii}}{\sqrt{\pi}})q_i 
+			+ \frac{(\gamma_{ii}'+ \gamma_{ii}'')}{\sqrt{\pi}}\tilde{q_i} 
+			+ \frac{erf(\gamma_{ij}r_{ij})}{r_{ij}}q_j 
+			+ \frac{erf(\gamma_{ij}'r_{ij})}{r_{ij}}\tilde{q_j}
+		\end{split}
+	\end{equation}
+	\begin{equation}
+		\begin{split}
+			&\frac{\partial U_{tot}}{\partial \tilde{q_i}}=0 ; \forall i = 1 ,..., N  \\
+			& = \tilde{\chi_i} 
+			+ (\tilde{J_{ii}} + \frac{2\tilde{\gamma_{ii}}}{\sqrt{\pi}})\tilde{q_i } 
+			+ \frac{(\gamma_{ii}' + \gamma_{ii}'')}{\sqrt{\pi}}q_i 
+			+ \frac{erf(\gamma_{ij}''r_{ij})}{r_{ij}}q_j 
+			+ \frac{erf(\tilde{q_j}r_{ij})}{r_{ij}}\tilde{q_j}
+		\end{split}		
+	\end{equation}
+	\begin{equation}
+	\begin{split}
+			\gamma_{ij} = \frac{1}{\sqrt{\alpha_i^2+\alpha_j^2}}
+			\hspace{0.25\textwidth} 
+			\gamma_{ij}'=\frac{1}{\sqrt{\alpha_i^2+\tilde{\alpha_j}^2}}\\	
+			\gamma_{ij}''=\frac{1}{\sqrt{\tilde{\alpha_i}^2+\alpha_j^2}}
+			\hspace{0.25\textwidth} 
+			\tilde{\gamma_{ij}} = \frac{1}{\sqrt{\tilde{\alpha_i}^2+\tilde{\alpha_j}^2}}
+	\end{split}
+	\end{equation}
+	\newline
+	\begin{equation}
+		A_{ij}=\frac{\partial U_{tot}}{\partial q_i \partial q_j} = 
+		\begin{cases}
+			J_{ii}+\frac{2\gamma_{ii}}{\sqrt{\pi}} & i =j\\
+			\frac{erf(\gamma_{ij}r_{ij})}{r_{ij}} & i \neq j
+		\end{cases}
+	\end{equation}
+	\begin{equation}
+		C_{ij}=\frac{\partial U_{tot}}{\partial q_i \partial \tilde{q_j}} =
+		\begin{cases}
+			\frac{\gamma_{ii}'+\gamma_{ii}''}{\sqrt{\pi}} & i=j \\
+			\frac{erf(\gamma_{ij}'r_{ij})}{r_{ij}} & i\neq j
+		\end{cases}
+	\end{equation}
+	\begin{equation}
+		B_{ij}=\frac{\partial U_{tot}}{\partial \tilde{q_i} \partial \tilde{q_j}} =
+		\begin{cases}
+			\tilde{J_{ii}}+\frac{2\tilde{\gamma_{ii}}}{\sqrt{\pi}} & i=j\\
+			\frac{erf(\tilde{\gamma_{ij}}r_{ij})}{r_{ij}} & i \neq j
+		\end{cases}
+	\end{equation}
+	\begin{equation}
+		D_{ij}=\frac{\partial U_{tot}}{\partial \tilde{q_i} \partial q_j} = 
+		\begin{cases}
+			\frac{\gamma_{ii}'+\gamma_{ii}''}{\sqrt{\pi}} & i=j \\
+			\frac{erf(\gamma_{ij}''r_{ij})}{r_{ij}} & i\neq j
+		\end{cases}
+	\end{equation}
+	$$
+		\Lambda Q = \Xi \hspace{10pt} ; \hspace{10pt}  \Lambda =
+	\begin{bmatrix}
+		A & C \\
+		D & B
+	\end{bmatrix}
+	$$
+\end{document}
