@@ -3,7 +3,7 @@ program main
     implicit none
     integer :: iat,nat,info
     real(8),allocatable :: rat(:,:),gw(:),qat(:),hardness(:),chi(:)
-    real(8),allocatable :: a(:,:)
+    real(8),allocatable :: a(:,:),ainv(:,:)
     character(LEN=3),allocatable :: sat(:)
     integer, allocatable :: ipiv(:)
     real(8),allocatable :: qq(:)
@@ -15,14 +15,25 @@ program main
     do iat = 1 , nat
         read(2,*) sat(iat),rat(1,iat),rat(2,iat),rat(3,iat),qat(iat),gw(iat),hardness(iat)
     end do
-    allocate(a(nat+1,nat+1))
+    allocate(a(nat+1,nat+1),ainv(nat+1,nat+1))
     call get_amat_cent1(nat,rat,gw,hardness,a)
     do iat = 1 , nat
         chi(iat)=-1.d0*dot_product(a(iat,1:nat),qat(:))
     end do
-    !do iat = 1 , nat
-    !    write(*,'(a,es14.6)') 'chi from "A*q = -chi" ',chi(iat)
-    !end do
+    
+   ! allocate(qq(1:nat+1))
+   ! qq(1:nat) = -chi(1:nat)
+   ! qq(1+nat) = sum(qat)
+   ! 
+   ! call inv(a,nat+1,ainv)
+   ! write(*,*) 'qat from CEP(col.1) and qat form mulliken(col.2) (no_shift in chi) :'
+   ! do iat = 1 , nat
+   ! write(*,'(2es14.6)') -1*dot_product(ainv(iat,1:nat+1),qq(1:nat+1)), qat(iat)
+   ! end do 
+    
+    do iat = 1 , nat
+        write(*,'(a,es14.6)') 'chi from "A*q = -chi" ',chi(iat)
+    end do
     allocate(ipiv(nat+1))
     call DGETRF(nat+1,nat+1,a,nat+1,ipiv,info)
     if(info/=0) then
@@ -32,28 +43,30 @@ program main
     allocate(qq(1:nat+1))
     qq(1:nat) = -chi(1:nat)
     qq(1+nat) = sum(qat)
-    !do iat = 1 , nat+1
-    !    write(*,'(a,es14.6)') 'input -chi for CEP (no_shift) ',qq(iat)
-    !end do
+    do iat = 1 , nat+1
+        write(*,'(a,es14.6)') 'input -chi for CEP (no_shift) ',qq(iat)
+    end do
     call DGETRS('N',nat+1,1,a,nat+1,ipiv,qq,nat+1,info)
     write(*,'(a,es14.6)') 'Lagrangian multiplier before shift : ' ,qq(nat+1) 
-    !write(*,*) 'qat from CEP(col.1) and qat form mulliken(col.2) (no_shift in chi) :'
-    !do iat = 1 , nat
-    !   write(*,'(2es14.6)') qq(iat) , qat(iat)
-    !end do 
+    write(*,*) 'qat from CEP(col.1) and qat form mulliken(col.2) (no_shift in chi) :'
+    do iat = 1 , nat
+       write(*,'(2es14.6)') qq(iat) , qat(iat)
+    end do 
 
     qq(1:nat) = -chi(1:nat)-1
     qq(1+nat) = sum(qat)
-    !do iat = 1 , nat+1
-    !    write(*,'(a,es14.6)') 'input -chi for CEP (shift = +1) ',qq(iat)
-    !end do
+    do iat = 1 , nat+1
+        write(*,'(a,es14.6)') 'input chi for CEP (shift = +1) ',qq(iat)
+    end do
     call DGETRS('N',nat+1,1,a,nat+1,ipiv,qq,nat+1,info)
     write(*,'(a,es14.6)') 'Lagrangian multiplier after shift : ' ,qq(nat+1) 
-    !write(*,*) 'qat from CEP(col.1) and qat form mulliken(col.2) (shift in chi) :'
-    !do iat = 1 , nat
-    !   write(*,'(2es14.6)') qq(iat) , qat(iat)
-    !end do 
-    
+    write(*,*) 'qat from CEP(col.1) and qat form mulliken(col.2) (shift in chi) :'
+    do iat = 1 , nat
+       write(*,'(2es14.6)') qq(iat) , qat(iat)
+    end do 
+   
+
+
 end program main
 !*****************************************************************************************
 !subroutine get_amat_cent1(atoms,ann_arr,a)
@@ -87,3 +100,19 @@ subroutine get_amat_cent1(nat,rat,gw,hardness,a)
     enddo
     a(nat+1,nat+1)=0.d0
 end subroutine get_amat_cent1
+!*****************************************************************************************
+subroutine inv(a,a_dim,ainv)
+    implicit none
+    integer,intent(in) :: a_dim
+    real(8),intent(in) :: a(a_dim,a_dim)
+    real(8),intent(out):: ainv(a_dim,a_dim)
+    real(8)            :: work(a_dim)         ! work array for LAPACK
+    integer            :: n,info,ipiv(a_dim)  ! pivot indices
+
+    ! Store A in Ainv to prevent it from being overwritten by LAPACK
+    ainv = a
+    call DGETRF(a_dim,a_dim,ainv,a_dim,ipiv,info)
+    if (info.ne.0) stop 'Matrix is numerically singular!'
+    call DGETRI(a_dim,ainv,a_dim,ipiv,work,a_dim,info)
+    if (info.ne.0) stop 'Matrix inversion failed!'
+end subroutine inv
