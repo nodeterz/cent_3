@@ -19,6 +19,8 @@ program main
     real(8),allocatable :: chi_mat_1(:,:),chi_mat_2(:,:)
     real(8),allocatable :: mat_chi_1(:),mat_chi_2(:)
     real(8),allocatable :: qq(:)
+    real(8),allocatable :: a_test(:,:),chi_test(:),qat_test(:),a_test_inv(:,:)
+    integer :: i_test
     real(8) :: coeff
     character(len=12) :: format_string, str_nat
 
@@ -101,6 +103,32 @@ program main
            write(*,format_string) qq(1:nat) , qat(1:nat) , qat(1:nat)-qq(1:nat)
         !end do 
     end do
+    
+!*****************************************************************************************
+!!Test part
+!    allocate(a_test(1:2*nat,1:2*nat),chi_test(1:2*nat),qat_test(1:2*nat),a_test_inv(1:2*nat,1:2*nat))
+!    a_test(1:nat,1:nat) = a(1:nat,1:nat)
+!    a_test(nat+1:2*nat,1:nat) = d(1:nat,1:nat)
+!    a_test(1:nat,nat+1:2*nat) = c(1:nat,1:nat)
+!    a_test(nat+1:2*nat,nat+1:2*nat) = b(1:nat,1:nat)
+!    chi_test(1:nat) = chi_1(1:nat)
+!    chi_test(nat+1:2*nat) = chi_2(1:nat)
+!    call  inv(a_test,2*nat,a_test_inv)
+!    call mat_mult(a_test_inv,-1.d0*chi_test,2*nat,2*nat,1,qat_test) 
+!    do i_test = 1 , nat
+!        write(*,'(2es14.6)') qat_test(i_test)+qat_test(i_test+nat),qq(i_test)
+!    end do
+!    deallocate(a_test,chi_test,qat_test,a_test_inv)
+!*****************************************************************************************
+!deallocation part
+    deallocate(sat,rat,qat ,chi_1,chi_2 ,gw_1,gw_2 ,hardness_1,hardness_2)
+    deallocate(a,ainv ,b,binv ,c,cinv ,d,dinv)
+    deallocate(temp_1_1,temp_2_1 ,temp_1_2,temp_2_2)
+    deallocate(temp_1_3,temp_2_3 ,temp_1_4,temp_2_4)
+    deallocate(chi_mat_1,chi_mat_2)
+    deallocate(qq,mat_chi_1,mat_chi_2)
+ 
+    
     !!allocate(ipiv(nat+1))
     !call DGETRF(nat+1,nat+1,a,nat+1,ipiv,info)
     !if(info/=0) then
