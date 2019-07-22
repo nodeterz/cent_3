@@ -1,7 +1,7 @@
 program main
     !use F95_LAPACK
     implicit none
-    integer :: iat,nat,info,chi_loop
+    integer :: iat,nat,info, i, j
     integer, allocatable :: ipiv(:)
     character(LEN=3),allocatable :: sat(:)
     real(8),allocatable :: rat(:,:),qat(:),chi(:)
@@ -16,12 +16,13 @@ program main
     real(8),allocatable :: temp_1_2(:,:),temp_2_2(:,:)
     real(8),allocatable :: temp_1_3(:,:),temp_2_3(:,:)
     real(8),allocatable :: temp_1_4(:,:),temp_2_4(:,:)
-    real(8),allocatable :: chi_mat_1(:,:),chi_mat_2(:,:)
+    real(8),allocatable :: chi_mat_1(:,:),chi_mat_2(:,:),chi_mat_inv(:,:)
     real(8),allocatable :: mat_chi_1(:),mat_chi_2(:)
     real(8),allocatable :: qq(:)
     real(8),allocatable :: a_test(:,:),chi_test(:),qat_test(:),a_test_inv(:,:)
+    integer :: chi_loop_1,chi_loop_2,chi_loop_3,chi_loop_4
     integer :: i_test
-    real(8) :: coeff
+    real(8) :: coeff,chi_mean_1, chi_mean_2, chi_var_1, chi_var_2
     character(len=12) :: format_string, str_nat
 
     open(2,file='posinp.rzx')
@@ -34,7 +35,7 @@ program main
     qat = 0.d0
     do iat = 1 , nat
         read(2,*) sat(iat),rat(1,iat),rat(2,iat),rat(3,iat),qat(iat),gw_1(iat),gw_2(iat)&
-                  ,hardness_1(iat),hardness_2(iat),chi_1(iat)
+                  ,hardness_1(iat),chi_1(iat)
     end do
     allocate(a(nat,nat),ainv(nat,nat))
     allocate(b(nat,nat),binv(nat,nat))
@@ -46,6 +47,11 @@ program main
     allocate(temp_1_3(nat,nat),temp_2_3(nat,nat))
     allocate(temp_1_4(nat,nat),temp_2_4(nat,nat))
     allocate(chi_mat_1(nat,nat),chi_mat_2(nat,nat))
+    allocate(qq(1:nat),mat_chi_1(1:nat),mat_chi_2(1:nat),chi_mat_inv(1:nat,1:nat))
+    write(*,*) 'chi_2 and hardness_2, chi_var_1, chi_var_2'
+
+    hardness_2(1:nat/2) = 1.d-3
+    hardness_2(nat/2+1:nat) = 1.d-3
 
     !## calculating a b c d matrices and their inverse
     call get_mat_cent1(nat,rat,gw_1,gw_2,hardness_1,hardness_2,a,b,c,d)
@@ -86,39 +92,45 @@ program main
     
     chi_mat_1(1:nat,1:nat) = temp_2_3(1:nat,1:nat) - temp_2_4(1:nat,1:nat)
 
-    allocate(qq(1:nat),mat_chi_1(1:nat),mat_chi_2(1:nat))
 
-    write(str_nat,'(I2.2)') 3*nat
+    write(str_nat,'(I2.2)') 2*nat+2
     format_string = '('//trim(str_nat)//'es14.6)'
     
-    !write(*,*) 'qat from CEP(col.1) and qat form mulliken(col.2) (no_shift in chi) :'
-    coeff = 0.d0
-    do chi_loop = 0 , 100
-        coeff = chi_loop*1.d-2
-        chi_2(1:nat) = coeff*chi_1(1:nat)
-        call mat_mult(chi_mat_1,chi_1,nat,nat,1,mat_chi_1) 
-        call mat_mult(chi_mat_2,chi_2,nat,nat,1,mat_chi_2) 
-        qq(1:nat) = mat_chi_1(1:nat) + mat_chi_2(1:nat) 
-        !do iat = 1 , nat
-           write(*,format_string) qq(1:nat) , qat(1:nat) , qat(1:nat)-qq(1:nat)
-        !end do 
-    end do
-    
+    call mat_mult(chi_mat_1,chi_1,nat,nat,1,mat_chi_1) 
+    call  inv(chi_mat_2,nat,chi_mat_inv)
+    qq(1:nat) = qat(1:nat)-mat_chi_1(1:nat)
+    call mat_mult(chi_mat_inv,qq,nat,nat,1,chi_2) 
+    chi_mean_1 = 2.d0*sum(chi_2(1:nat/2))/nat
+    chi_mean_2 = 2.d0*sum(chi_2(nat/2+1:nat))/nat
+    chi_var_1 = (2.d0/nat)*sum((chi_2(1:nat/2)-chi_mean_1)**2)
+    chi_var_2 = (2.d0/nat)*sum((chi_2(nat/2+1:nat)-chi_mean_2)**2)
+    write(*,format_string)chi_2,hardness_2,chi_var_1,chi_var_2
+    !call mat_mult(chi_mat_1,chi_1,nat,nat,1,mat_chi_1) 
+    !call mat_mult(chi_mat_2,chi_2,nat,nat,1,mat_chi_2)
+    !write(*,*) 'qat_cep :'
+    !write(*,format_string) mat_chi_1+mat_chi_2 
+    !write(*,*) 'qat_mulliken :'
+    !write(*,format_string) qat(1:nat)
+
 !*****************************************************************************************
-!!Test part
-!    allocate(a_test(1:2*nat,1:2*nat),chi_test(1:2*nat),qat_test(1:2*nat),a_test_inv(1:2*nat,1:2*nat))
-!    a_test(1:nat,1:nat) = a(1:nat,1:nat)
-!    a_test(nat+1:2*nat,1:nat) = d(1:nat,1:nat)
-!    a_test(1:nat,nat+1:2*nat) = c(1:nat,1:nat)
-!    a_test(nat+1:2*nat,nat+1:2*nat) = b(1:nat,1:nat)
-!    chi_test(1:nat) = chi_1(1:nat)
-!    chi_test(nat+1:2*nat) = chi_2(1:nat)
-!    call  inv(a_test,2*nat,a_test_inv)
-!    call mat_mult(a_test_inv,-1.d0*chi_test,2*nat,2*nat,1,qat_test) 
-!    do i_test = 1 , nat
-!        write(*,'(2es14.6)') qat_test(i_test)+qat_test(i_test+nat),qq(i_test)
-!    end do
-!    deallocate(a_test,chi_test,qat_test,a_test_inv)
+!Test part
+    allocate(a_test(1:2*nat,1:2*nat),chi_test(1:2*nat),qat_test(1:2*nat),a_test_inv(1:2*nat,1:2*nat))
+    a_test(1:nat,1:nat) = a(1:nat,1:nat)
+    a_test(nat+1:2*nat,1:nat) = d(1:nat,1:nat)
+    a_test(1:nat,nat+1:2*nat) = c(1:nat,1:nat)
+    a_test(nat+1:2*nat,nat+1:2*nat) = b(1:nat,1:nat)
+    chi_test(1:nat) = chi_1(1:nat)
+    chi_test(nat+1:2*nat) = chi_2(1:nat)
+    call  inv(a_test,2*nat,a_test_inv)
+    call mat_mult(a_test_inv,-1.d0*chi_test,2*nat,2*nat,1,qat_test) 
+    do i_test = 1 , nat
+        write(*,'(2es14.6)') qat_test(i_test)+qat_test(i_test+nat),qat(i_test)
+    end do
+        write(*,*)'_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-'
+    do i_test = 1 , nat
+        write(*,'(3es14.6)') qat_test(i_test),qat_test(i_test+nat),qat(i_test)
+    end do
+    deallocate(a_test,chi_test,qat_test,a_test_inv)
 !*****************************************************************************************
 !deallocation part
     deallocate(sat,rat,qat ,chi_1,chi_2 ,gw_1,gw_2 ,hardness_1,hardness_2)
