@@ -122,7 +122,6 @@ program main
     chi_test(nat+1:2*nat) = chi_2(1:nat)
     call  inv(a_test,2*nat,a_test_inv)
     call mat_mult(a_test_inv,-1.d0*chi_test,2*nat,2*nat,1,qat_test) 
-    write(*,'(4a14)') 'qat_1','qat_2','q_tot','q_inp' 
     do i_test = 1 , nat
         write(*,'(4es14.6)') qat_test(i_test),qat_test(i_test+nat),qat_test(i_test)+qat_test(i_test+nat),qat(i_test)
     end do

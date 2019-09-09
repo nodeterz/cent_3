@@ -1,0 +1,13 @@
+cd 000 && run.sh > results && cd ..
+cd 001 && run.sh > results && cd ..
+cd 002 && run.sh > results && cd ..
+cd 003 && run.sh > results && cd ..
+cd 004 && run.sh > results && cd ..
+cd 005 && run.sh > results && cd ..
+cd 007 && run.sh > results && cd ..
+cd 010 && run.sh > results && cd ..
+cd 012 && run.sh > results && cd ..
+cd 015 && run.sh > results && cd ..
+cd 020 && run.sh > results && cd ..
+cd 025 && run.sh > results && cd ..
+cd 030 && run.sh > results && cd ..
