@@ -1,0 +1,13 @@
+cp ../000/posinp.rzx posinp.rzx.000
+cp ../001/posinp.rzx posinp.rzx.001
+cp ../002/posinp.rzx posinp.rzx.002
+cp ../003/posinp.rzx posinp.rzx.003
+cp ../004/posinp.rzx posinp.rzx.004
+cp ../005/posinp.rzx posinp.rzx.005
+cp ../007/posinp.rzx posinp.rzx.007
+cp ../010/posinp.rzx posinp.rzx.010
+cp ../012/posinp.rzx posinp.rzx.012
+cp ../015/posinp.rzx posinp.rzx.015
+cp ../020/posinp.rzx posinp.rzx.020
+cp ../025/posinp.rzx posinp.rzx.025
+cp ../030/posinp.rzx posinp.rzx.030
