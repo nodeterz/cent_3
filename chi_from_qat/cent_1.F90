@@ -7,23 +7,36 @@ program main
     character(LEN=3),allocatable :: sat(:)
     integer, allocatable :: ipiv(:)
     real(8),allocatable :: qq(:)
-    real(8) :: ttt
+    real(8) :: tt_1
+    character(8) :: tt_2
     open(2,file='posinp.rzx')
 
     read(2,*) nat 
     allocate(sat(nat),rat(3,nat),gw(nat),qat(nat+1),hardness(nat),chi(nat))
     qat = 0.d0
+    !do iat = 1 , nat
+    !    read(2,*) sat(iat),rat(1,iat),rat(2,iat),rat(3,iat),qat(iat),ttt,gw(iat),hardness(iat),ttt
+    !end do
+    !----------------------------------------------------------------------------------------------
     do iat = 1 , nat
-        read(2,*) sat(iat),rat(1,iat),rat(2,iat),rat(3,iat),qat(iat),ttt,gw(iat),hardness(iat),ttt
+        read(2,*) tt_2,rat(1,iat),rat(2,iat),rat(3,iat),sat(iat)
+    end do
+    do iat = 1 , nat
+        read(2,*) qat(iat)
+    end do
+    read(2,*) tt_2,tt_2,tt_2,tt_2 
+    do iat = 1 , nat
+        read(2,*) tt_1,gw(iat),hardness(iat),tt_1
     end do
     allocate(a(nat+1,nat+1),ainv(nat+1,nat+1))
     call get_amat_cent1(nat,rat,gw,hardness,a)
     do iat = 1 , nat
         chi(iat)=-1.d0*dot_product(a(iat,1:nat),qat(:))
     end do
-   write(*,*) '______________________________________________________________'
+   write(*,*) '_____________________start_of_cent_1__________________________'
    write(*,*) 'chi_from cent_1'
    write(*,'(4es14.6)') chi
+   write(*,*) '_____________________end_of_cent_1__________________________'
    ! allocate(qq(1:nat+1))
    ! qq(1:nat) = -chi(1:nat)
    ! qq(1+nat) = sum(qat)
