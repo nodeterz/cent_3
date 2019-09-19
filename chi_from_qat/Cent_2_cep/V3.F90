@@ -11,6 +11,7 @@ program main
     real(8),allocatable :: a(:,:), b(:,:), c(:,:), d(:,:)
     real(8),allocatable :: a_tot(:,:), a_tot_inv(:,:)
     real(8) :: q_tot, lag_mult
+    real(8) :: epot , eref
     character :: tt_1
     
     open(2,file='posinp.rzx')
@@ -50,9 +51,36 @@ program main
     chi_tot(nat+1:2*nat) = chi_2(1:nat)
     chi_tot(2*nat+1) = q_tot 
     do i = 1 , 2*nat+1
-        write(*,*)  chi_tot(i)
+        write(*,*)  'chi_tot : ', chi_tot(i)
     end do
+    !## CEP part
+   
+    allocate(a_tot_inv(2*nat+1,2*nat+1),qat(2*nat+1))
+    call inv(a_tot,2*nat+1,a_tot_inv)
+    do i = 1 , 2*nat+1
+        write(*,*)  a_tot_inv(i,:)
+    end do
+    call mat_mult(a_tot_inv,chi_tot,2*nat+1,2*nat+1,1,qat)
+    do i = 1 , 2*nat+1
+        write(*,*) 'qat : ', qat(i)
+    end do
+        write(*,*)  '***********************************************************************'
+    do i = 1 , nat
+        write(*,*)  'sum qat : ', qat(i)+qat(i+nat)
+    end do
+    !## ENERGY part
+    epot = 0.d0
+    eref = 0.d0
+    call cal_electrostatic_ann(nat,rat,gw_1,gw_2,qat,epot)
+    write(*,*) 'EPOT = ', epot
+    do i = 1, nat
+        epot = epot + eref + chi_tot(i)*qat(i) + chi_tot(i+nat)*qat(i+nat) + &
+                      0.5d0*hardness_1(i)*(qat(i)**2) + 0.5d0*hardness_2(i)*(qat(i+nat)**2)
+
+    end do
+    write(*,*) 'EPOT = ', epot
 !*****************************************************************************************
+
 !deallocation part
     
 end program main
@@ -133,3 +161,48 @@ subroutine mat_mult(a,b,dim_1,dim_2,dim_3,ab)
         end do
     end do
 end subroutine mat_mult
+!*****************************************************************************************
+subroutine cal_electrostatic_ann(nat,rat,gw_1,gw_2,qat,epot)
+    implicit none
+    integer, intent(in):: nat
+    real(8), intent(in):: rat(3,nat)
+    real(8), intent(in):: gw_1(nat),gw_2(nat)
+    real(8), intent(in):: qat(2*nat)
+    real(8), intent(out) :: epot
+    ! local variables
+
+    integer :: iat, jat
+    real(8) :: pi 
+    real(8) :: dx, dy, dz, r
+    real(8) :: gama_1, gama_2, gama_3, gama_4
+    real(8) :: beta_iat_1, beta_iat_2, beta_jat_1, beta_jat_2
+
+    epot = 0.d0
+    pi = 4.d0*atan(1.d0)
+    do iat = 1 , nat
+        beta_iat_1=gw_1(iat)
+        beta_iat_2=gw_2(iat)
+        gama_1=1.d0/sqrt(beta_iat_1**2+beta_iat_1**2)
+        gama_2=1.d0/sqrt(beta_iat_1**2+beta_iat_2**2)
+        gama_3=1.d0/sqrt(beta_iat_2**2+beta_iat_1**2)
+        gama_4=1.d0/sqrt(beta_iat_2**2+beta_iat_2**2)
+        epot = epot + (qat(iat)**2*gama_1 + qat(iat+nat)**2*gama_4 + qat(iat)*qat(iat+nat)*(gama_2+gama_3))/sqrt(pi)
+        !write(*,*) (qat(iat)**2*gama_1 + qat(iat+nat)**2*gama_4 + qat(iat)*qat(iat+nat)*(gama_2+gama_3))/sqrt(pi)
+        do jat = iat+1 , nat
+            dx=rat(1,jat)-rat(1,iat)
+            dy=rat(2,jat)-rat(2,iat)
+            dz=rat(3,jat)-rat(3,iat)
+            r=sqrt(dx*dx+dy*dy+dz*dz)
+            beta_jat_1=gw_1(jat)
+            beta_jat_2=gw_2(jat)
+            gama_1=1.d0/sqrt(beta_iat_1**2+beta_jat_1**2)
+            gama_2=1.d0/sqrt(beta_iat_1**2+beta_jat_2**2)
+            gama_3=1.d0/sqrt(beta_iat_2**2+beta_jat_1**2)
+            gama_4=1.d0/sqrt(beta_iat_2**2+beta_jat_2**2)
+            epot = epot + ( qat(iat)*qat(jat)*erf(gama_1*r) + qat(iat)*qat(jat+nat)*erf(gama_2*r) &
+                    + qat(iat+nat)*qat(jat)*erf(gama_3*r) + qat(iat+nat)*qat(jat+nat)*erf(gama_4*r))/r
+            write(*,*)iat,jat, ( qat(iat)*qat(jat)*erf(gama_1*r) + qat(iat)*qat(jat+nat)*erf(gama_2*r) &
+                    + qat(iat+nat)*qat(jat)*erf(gama_3*r) + qat(iat+nat)*qat(jat+nat)*erf(gama_4*r))/r
+        end do
+    end do
+end subroutine 
