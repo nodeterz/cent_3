@@ -5,6 +5,7 @@ footskip=.25in]{geometry}
 \usepackage{amsmath}
 \usepackage{amssymb}
 \begin{document}
+	\section{Energy}
 	\begin{equation}
 	\begin{split}
 		U_{tot}  = &\sum_{i=1}^{N} [E_i^0 + \chi_i q_i + \tilde{\chi_i}\tilde{q_i }+ \frac{1}{2}(J_{ii}+\frac{2\gamma_{ii}}{\sqrt{\pi}})q_i^2 + \frac{1}{2}(\tilde{J_{ii}}+\frac{2\tilde{\gamma_{ii}}}{\sqrt{\pi}})\tilde{q_i}^2+\frac{q_i\tilde{q_i }(\gamma_{ii}'+\gamma_{ii}'')}{\sqrt{\pi}}]\\ 
@@ -85,4 +86,31 @@ footskip=.25in]{geometry}
 						  &[(B-DA^{-1}C)^{-1}DA^{-1} - (A-CB^{-1}D)^{-1}]\chi 
 		\end{split}
 	\end{equation}
+	\rule{450pt}{0.5pt}
+	\section{CEP}
+	\begin{equation}
+	A Q = \Xi\hspace{10pt} ; 
+	A = 
+	\begin{pmatrix}
+		A & C & \vline & 1\\
+		D & B & \vline & 1\\
+		\hline
+		1 & 1 & \vline & 0
+	\end{pmatrix}
+	\hspace{10pt}
+	Q = 
+	\begin{pmatrix}
+		q_1 \\ q_2 \\ .\\.\\.\\q_n\\\tilde{q_1}\\\tilde{q_2}\\.\\.\\.\\\tilde{q_n}\\\hline\lambda
+	\end{pmatrix}
+	\hspace{10pt}
+	\Xi = 
+	\begin{pmatrix}
+	\chi_1 \\ \chi_2 \\ .\\.\\.\\\chi_n\\\tilde{\chi_1}\\\tilde{\chi_2}\\.\\.\\.\\\tilde{\chi_n}\\\hline q_{tot}
+	\end{pmatrix}
+	\end{equation}
+	\begin{equation}
+		\implies
+		Q = A^{-1}\Xi
+	\end{equation}
+	
 \end{document}
