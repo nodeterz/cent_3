@@ -1,7 +1,7 @@
 program main
     !use F95_LAPACK
     implicit none
-    integer :: iat,nat,info, i, j
+    integer :: iat,nat,info, i, j, sd_loop
     integer, allocatable :: ipiv(:)
     character(LEN=3),allocatable :: sat(:)
     real(8),allocatable :: rat(:,:),qat(:),chi(:)
@@ -11,12 +11,12 @@ program main
     real(8),allocatable :: a(:,:), b(:,:), c(:,:), d(:,:)
     real(8),allocatable :: a_tot(:,:), a_tot_inv(:,:)
     real(8) :: q_tot, lag_mult
-    real(8) :: epot , eref
+    real(8) :: e_cent, e_err, e_ref, e_aims, sd_s, e_err_old
     real(8):: bohr2ang=0.529177210d0
     character :: tt_1
     
     open(2,file='posinp.rzx.out')
-    read(2,*) nat 
+    read(2,*) nat
     allocate(sat(nat),rat(3,nat))
     allocate(chi_1(nat),chi_2(nat))
     allocate(gw_1(nat),gw_2(nat))
@@ -31,6 +31,7 @@ program main
     do iat = 1 , nat
         read(2,*) chi_2(iat)
     end do
+    read(2,*) tt_1, tt_1, tt_1, tt_1
     do iat = 1 , nat
         read(2,*) gw_1(iat),gw_2(iat),hardness_1(iat),chi_1(iat)
     end do
@@ -45,43 +46,42 @@ program main
     a_tot(2*nat+1,1:2*nat+1)=1
     a_tot(1:2*nat+1,2*nat+1)=1
     a_tot((2*nat)+1,(2*nat)+1)=0
-!    do i = 1 , 2*nat+1
-!        write(*,*)  a_tot(i,:)
-!    end do
+
     chi_tot(1:nat) = -1.d0*chi_1(1:nat)
     chi_tot(nat+1:2*nat) = -1.d0*chi_2(1:nat)
     chi_tot(2*nat+1) = q_tot 
-!    do i = 1 , 2*nat+1
-!        write(*,*)  'chi_tot : ', chi_tot(i)
-!    end do
+    
+    
     !## CEP part
-   
     allocate(a_tot_inv(2*nat+1,2*nat+1),qat(2*nat+1))
     call inv(a_tot,2*nat+1,a_tot_inv)
-!    do i = 1 , 2*nat+1
-!        write(*,*)  a_tot_inv(i,:)
-!    end do
-    call mat_mult(a_tot_inv,chi_tot,2*nat+1,2*nat+1,1,qat)
-    do i = 1 , 2*nat+1
-        write(*,*) 'qat : ', qat(i)
-    end do
-        write(*,*)  '***********************************************************************'
-    do i = 1 , nat
-        write(*,*)  'sum qat : ', qat(i)+qat(i+nat)
-    end do
-    !## ENERGY part
-    epot = 0.d0
-    eref = 0.d0 
-    call cal_electrostatic_ann(nat,rat,gw_1,gw_2,qat,epot)
-!    write(*,*) 'EPOT = ', epot
-    do i = 1, nat
-        epot = epot + chi_tot(i)*qat(i) + chi_tot(i+nat)*qat(i+nat) + &
-                      0.5d0*hardness_1(i)*(qat(i)**2) + 0.5d0*hardness_2(i)*(qat(i+nat)**2)
+    !## Steepest_Descent part
+    e_ref = 15005.d0
+    e_aims = 15007.d0
+    sd_s = 1.d-3
+    do sd_loop = 1 , 1000000
+        e_err_old = e_err
+        !chi_tot(nat+1:2*nat) = chi_tot(nat+1:2*nat) - sd_s*qat(nat+1:2*nat)
+        chi_tot = chi_tot - sd_s*qat
+        call mat_mult(a_tot_inv,chi_tot,2*nat+1,2*nat+1,1,qat)
+        !## ENERGY part
+        e_cent = 0.d0
+        call cal_electrostatic_ann(nat,rat,gw_1,gw_2,qat,e_cent)
+        do i = 1, nat
+            e_cent = e_cent + chi_tot(i)*qat(i) + chi_tot(i+nat)*qat(i+nat) + &
+                          0.5d0*hardness_1(i)*(qat(i)**2) + 0.5d0*hardness_2(i)*(qat(i+nat)**2)
 
+        end do
+       
+
+        e_cent = e_cent*27.211384500d0
+        write(*,*) 'ENERGY cent(eV) = ', e_cent
+        e_err = e_cent + e_ref - e_aims
+        write(*,*) 'ENERGY ERROR(eV) = ', e_err
+        if (abs(e_err-e_err_old)<1.d-4) exit
     end do
-        epot = epot + eref
-        epot = epot*27.211384500d0
-    write(*,*) 'EPOT(eV) = ', epot
+    write(*,*) chi_tot
+    write(*,*) qat
 !*****************************************************************************************
 
 !deallocation part
