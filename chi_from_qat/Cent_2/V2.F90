@@ -26,9 +26,12 @@ program main
     character(len=12) :: format_string, str_nat
     character :: tt_1
     real(8) :: tt_2
+    real(8):: bohr2ang=0.529177210d0
 
     open(2,file='posinp.rzx')
+    open(3,file='posinp.rzx.out')
     read(2,*) nat 
+    write(3,*) nat 
     allocate(sat(nat),rat(3,nat),qat(nat+1))
     allocate(chi_1(nat),chi_2(nat))
     allocate(gw_1(nat),gw_2(nat))
@@ -42,7 +45,9 @@ program main
     !--------------------------------------------------------------------------------------
     do iat = 1 , nat
         read(2,*) tt_1,rat(1,iat),rat(2,iat),rat(3,iat),sat(iat)
+        write(3,*) tt_1,rat(1,iat),rat(2,iat),rat(3,iat),sat(iat)
     end do
+    rat = rat/bohr2ang
     do iat = 1 , nat
         read(2,*) qat(iat)
     end do
@@ -118,6 +123,12 @@ program main
     chi_var_1 = sqrt((2.d0/nat)*sum((chi_2(1:nat/2)-chi_mean_1)**2))
     chi_var_2 = sqrt((2.d0/nat)*sum((chi_2(nat/2+1:nat)-chi_mean_2)**2))
     write(*,format_string)chi_2,hardness_2,chi_var_1,chi_var_2
+    do iat = 1 , nat
+        write(3,*) chi_2(iat)
+    end do
+    do iat = 1 , nat
+        write(3,*) gw_1(iat),gw_2(iat),hardness_1(iat),chi_1(iat)
+    end do
     !call mat_mult(chi_mat_1,chi_1,nat,nat,1,mat_chi_1) 
     !call mat_mult(chi_mat_2,chi_2,nat,nat,1,mat_chi_2)
     !write(*,*) 'qat_cep :'

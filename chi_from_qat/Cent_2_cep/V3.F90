@@ -12,9 +12,10 @@ program main
     real(8),allocatable :: a_tot(:,:), a_tot_inv(:,:)
     real(8) :: q_tot, lag_mult
     real(8) :: epot , eref
+    real(8):: bohr2ang=0.529177210d0
     character :: tt_1
     
-    open(2,file='posinp.rzx')
+    open(2,file='posinp.rzx.out')
     read(2,*) nat 
     allocate(sat(nat),rat(3,nat))
     allocate(chi_1(nat),chi_2(nat))
@@ -26,10 +27,10 @@ program main
     do iat = 1 , nat
         read(2,*) tt_1,rat(1,iat),rat(2,iat),rat(3,iat),sat(iat)
     end do
+    rat = rat/bohr2ang
     do iat = 1 , nat
         read(2,*) chi_2(iat)
     end do
-    read(2,*) tt_1,tt_1,tt_1,tt_1
     do iat = 1 , nat
         read(2,*) gw_1(iat),gw_2(iat),hardness_1(iat),chi_1(iat)
     end do
@@ -44,22 +45,22 @@ program main
     a_tot(2*nat+1,1:2*nat+1)=1
     a_tot(1:2*nat+1,2*nat+1)=1
     a_tot((2*nat)+1,(2*nat)+1)=0
-    do i = 1 , 2*nat+1
-        write(*,*)  a_tot(i,:)
-    end do
-    chi_tot(1:nat) = chi_1(1:nat)
-    chi_tot(nat+1:2*nat) = chi_2(1:nat)
+!    do i = 1 , 2*nat+1
+!        write(*,*)  a_tot(i,:)
+!    end do
+    chi_tot(1:nat) = -1.d0*chi_1(1:nat)
+    chi_tot(nat+1:2*nat) = -1.d0*chi_2(1:nat)
     chi_tot(2*nat+1) = q_tot 
-    do i = 1 , 2*nat+1
-        write(*,*)  'chi_tot : ', chi_tot(i)
-    end do
+!    do i = 1 , 2*nat+1
+!        write(*,*)  'chi_tot : ', chi_tot(i)
+!    end do
     !## CEP part
    
     allocate(a_tot_inv(2*nat+1,2*nat+1),qat(2*nat+1))
     call inv(a_tot,2*nat+1,a_tot_inv)
-    do i = 1 , 2*nat+1
-        write(*,*)  a_tot_inv(i,:)
-    end do
+!    do i = 1 , 2*nat+1
+!        write(*,*)  a_tot_inv(i,:)
+!    end do
     call mat_mult(a_tot_inv,chi_tot,2*nat+1,2*nat+1,1,qat)
     do i = 1 , 2*nat+1
         write(*,*) 'qat : ', qat(i)
@@ -70,15 +71,17 @@ program main
     end do
     !## ENERGY part
     epot = 0.d0
-    eref = 0.d0
+    eref = 0.d0 
     call cal_electrostatic_ann(nat,rat,gw_1,gw_2,qat,epot)
-    write(*,*) 'EPOT = ', epot
+!    write(*,*) 'EPOT = ', epot
     do i = 1, nat
-        epot = epot + eref + chi_tot(i)*qat(i) + chi_tot(i+nat)*qat(i+nat) + &
+        epot = epot + chi_tot(i)*qat(i) + chi_tot(i+nat)*qat(i+nat) + &
                       0.5d0*hardness_1(i)*(qat(i)**2) + 0.5d0*hardness_2(i)*(qat(i+nat)**2)
 
     end do
-    write(*,*) 'EPOT = ', epot
+        epot = epot + eref
+        epot = epot*27.211384500d0
+    write(*,*) 'EPOT(eV) = ', epot
 !*****************************************************************************************
 
 !deallocation part
@@ -168,7 +171,7 @@ subroutine cal_electrostatic_ann(nat,rat,gw_1,gw_2,qat,epot)
     real(8), intent(in):: rat(3,nat)
     real(8), intent(in):: gw_1(nat),gw_2(nat)
     real(8), intent(in):: qat(2*nat)
-    real(8), intent(out) :: epot
+    real(8), intent(inout) :: epot
     ! local variables
 
     integer :: iat, jat
@@ -177,7 +180,6 @@ subroutine cal_electrostatic_ann(nat,rat,gw_1,gw_2,qat,epot)
     real(8) :: gama_1, gama_2, gama_3, gama_4
     real(8) :: beta_iat_1, beta_iat_2, beta_jat_1, beta_jat_2
 
-    epot = 0.d0
     pi = 4.d0*atan(1.d0)
     do iat = 1 , nat
         beta_iat_1=gw_1(iat)
@@ -201,8 +203,8 @@ subroutine cal_electrostatic_ann(nat,rat,gw_1,gw_2,qat,epot)
             gama_4=1.d0/sqrt(beta_iat_2**2+beta_jat_2**2)
             epot = epot + ( qat(iat)*qat(jat)*erf(gama_1*r) + qat(iat)*qat(jat+nat)*erf(gama_2*r) &
                     + qat(iat+nat)*qat(jat)*erf(gama_3*r) + qat(iat+nat)*qat(jat+nat)*erf(gama_4*r))/r
-            write(*,*)iat,jat, ( qat(iat)*qat(jat)*erf(gama_1*r) + qat(iat)*qat(jat+nat)*erf(gama_2*r) &
-                    + qat(iat+nat)*qat(jat)*erf(gama_3*r) + qat(iat+nat)*qat(jat+nat)*erf(gama_4*r))/r
+!            write(*,*)iat,jat, ( qat(iat)*qat(jat)*erf(gama_1*r) + qat(iat)*qat(jat+nat)*erf(gama_2*r) &
+!                    + qat(iat+nat)*qat(jat)*erf(gama_3*r) + qat(iat+nat)*qat(jat+nat)*erf(gama_4*r))/r
         end do
     end do
 end subroutine 

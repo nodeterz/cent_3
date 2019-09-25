@@ -8,6 +8,7 @@ program main
     integer, allocatable :: ipiv(:)
     real(8),allocatable :: qq(:)
     real(8) :: tt_1
+    real(8):: bohr2ang=0.529177210d0
     character(8) :: tt_2
     open(2,file='posinp.rzx')
 
@@ -21,6 +22,7 @@ program main
     do iat = 1 , nat
         read(2,*) tt_2,rat(1,iat),rat(2,iat),rat(3,iat),sat(iat)
     end do
+    rat = rat/bohr2ang
     do iat = 1 , nat
         read(2,*) qat(iat)
     end do
