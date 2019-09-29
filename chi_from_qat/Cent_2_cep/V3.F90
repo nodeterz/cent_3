@@ -11,7 +11,7 @@ program main
     real(8),allocatable :: a(:,:), b(:,:), c(:,:), d(:,:)
     real(8),allocatable :: a_tot(:,:), a_tot_inv(:,:)
     real(8) :: q_tot, lag_mult
-    real(8) :: e_cent, e_err, e_ref, e_aims, sd_s, e_err_old
+    real(8) :: e_cent, e_err, e_ref, e_aims, sd_s, e_err_old, tmp_sd
     real(8):: bohr2ang=0.529177210d0
     character :: tt_1
     
@@ -48,7 +48,7 @@ program main
     a_tot((2*nat)+1,(2*nat)+1)=0
 
     chi_tot(1:nat) = -1.d0*chi_1(1:nat)
-    chi_tot(nat+1:2*nat) = -1.d0*chi_2(1:nat)
+    chi_tot(nat+1:2*nat) = -1.d0*chi_1(1:nat)
     chi_tot(2*nat+1) = q_tot 
     
     
@@ -56,29 +56,42 @@ program main
     allocate(a_tot_inv(2*nat+1,2*nat+1),qat(2*nat+1))
     call inv(a_tot,2*nat+1,a_tot_inv)
     !## Steepest_Descent part
-    e_ref = 15005.d0
-    e_aims = 15007.d0
+    e_ref = 15005.d0/27.211384500d0
+    e_aims = 15015.d0/27.211384500d0
     sd_s = 1.d-3
-    do sd_loop = 1 , 1000000
-        e_err_old = e_err
-        !chi_tot(nat+1:2*nat) = chi_tot(nat+1:2*nat) - sd_s*qat(nat+1:2*nat)
-        chi_tot = chi_tot - sd_s*qat
-        call mat_mult(a_tot_inv,chi_tot,2*nat+1,2*nat+1,1,qat)
-        !## ENERGY part
-        e_cent = 0.d0
-        call cal_electrostatic_ann(nat,rat,gw_1,gw_2,qat,e_cent)
-        do i = 1, nat
-            e_cent = e_cent + chi_tot(i)*qat(i) + chi_tot(i+nat)*qat(i+nat) + &
-                          0.5d0*hardness_1(i)*(qat(i)**2) + 0.5d0*hardness_2(i)*(qat(i+nat)**2)
-
-        end do
-       
-
-        e_cent = e_cent*27.211384500d0
-        write(*,*) 'ENERGY cent(eV) = ', e_cent
-        e_err = e_cent + e_ref - e_aims
-        write(*,*) 'ENERGY ERROR(eV) = ', e_err
-        if (abs(e_err-e_err_old)<1.d-4) exit
+    do sd_loop = 1 , Huge(sd_loop)
+        if (sd_loop==1) then
+            e_cent = 0.d0
+            call mat_mult(a_tot_inv,chi_tot,2*nat+1,2*nat+1,1,qat)
+            call cal_electrostatic_ann(nat,rat,gw_1,gw_2,qat,e_cent)
+            do i = 1, nat
+                e_cent = e_cent + chi_tot(i)*qat(i) + chi_tot(i+nat)*qat(i+nat) + &
+                              0.5d0*hardness_1(i)*(qat(i)**2) + 0.5d0*hardness_2(i)*(qat(i+nat)**2)
+            end do
+            !e_cent = e_cent*27.211384500d0
+            e_err = sqrt((e_cent + e_ref - e_aims)**2)
+            write(*,*) 'ENERGY cent(eV) = ', e_cent
+        else
+            e_err_old = e_err
+            tmp_sd = sd_s*(e_cent+e_ref-e_aims)/e_err
+            chi_tot(1:2*nat) = chi_tot(1:2*nat) - tmp_sd*qat(1:2*nat)
+            call mat_mult(a_tot_inv,chi_tot,2*nat+1,2*nat+1,1,qat)
+            e_cent = 0.d0
+            call cal_electrostatic_ann(nat,rat,gw_1,gw_2,qat,e_cent)
+            do i = 1, nat
+                e_cent = e_cent + chi_tot(i)*qat(i) + chi_tot(i+nat)*qat(i+nat) + &
+                              0.5d0*hardness_1(i)*(qat(i)**2) + 0.5d0*hardness_2(i)*(qat(i+nat)**2)
+            end do
+            !e_cent = e_cent*27.211384500d0
+            e_err = sqrt((e_cent + e_ref - e_aims)**2)
+        end if
+        !if ((e_err-e_err_old)<0.d0) then
+        !    sd_s = sd_s*1.05d0
+        !else
+        !    sd_s = sd_s*0.8d0
+        !end if
+        write(*,*) 'ITER, E_CENT, E_DFT, E_ERR, SD_S = ',sd_loop,e_cent, e_aims-e_ref, e_err, sd_s,tmp_sd
+        if (e_err<1.d-8) exit
     end do
     write(*,*) chi_tot
     write(*,*) qat
