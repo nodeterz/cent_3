@@ -74,7 +74,8 @@ program main
         else
             e_err_old = e_err
             tmp_sd = sd_s*(e_cent+e_ref-e_aims)/e_err
-            chi_tot(1:2*nat) = chi_tot(1:2*nat) - tmp_sd*qat(1:2*nat)
+            !chi_tot(1:2*nat) = chi_tot(1:2*nat) - tmp_sd*qat(1:2*nat)
+            chi_tot(nat+1:2*nat) = chi_tot(nat+1:2*nat) - tmp_sd*qat(nat+1:2*nat)
             call mat_mult(a_tot_inv,chi_tot,2*nat+1,2*nat+1,1,qat)
             e_cent = 0.d0
             call cal_electrostatic_ann(nat,rat,gw_1,gw_2,qat,e_cent)
@@ -85,13 +86,14 @@ program main
             !e_cent = e_cent*27.211384500d0
             e_err = sqrt((e_cent + e_ref - e_aims)**2)
         end if
-        !if ((e_err-e_err_old)<0.d0) then
-        !    sd_s = sd_s*1.05d0
-        !else
-        !    sd_s = sd_s*0.8d0
-        !end if
+        if ((e_err-e_err_old)<0.d0) then
+            sd_s = sd_s*1.05d0
+        else
+            sd_s = sd_s*0.8d0
+        end if
         write(*,*) 'ITER, E_CENT, E_DFT, E_ERR, SD_S = ',sd_loop,e_cent, e_aims-e_ref, e_err, sd_s,tmp_sd
-        if (e_err<1.d-8) exit
+        !if (e_err<1.d-8) exit
+        if ((abs(e_err-e_err_old))<1.d-16) exit
     end do
     write(*,*) chi_tot
     write(*,*) qat
