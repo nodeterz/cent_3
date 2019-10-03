@@ -1,102 +1,125 @@
 program main
     !use F95_LAPACK
     implicit none
-    integer :: iat,nat,info, i, j, sd_loop
-    integer, allocatable :: ipiv(:)
-    character(LEN=3),allocatable :: sat(:)
-    real(8),allocatable :: rat(:,:),qat(:),chi(:)
-    real(8),allocatable :: chi_1(:),chi_2(:),chi_tot(:)
-    real(8),allocatable :: gw_1(:),gw_2(:)
-    real(8),allocatable :: hardness_1(:),hardness_2(:)
-    real(8),allocatable :: a(:,:), b(:,:), c(:,:), d(:,:)
-    real(8),allocatable :: a_tot(:,:), a_tot_inv(:,:)
-    real(8) :: q_tot, lag_mult
-    real(8) :: e_cent, e_err, e_ref, e_aims, sd_s, e_err_old, tmp_sd
-    real(8):: bohr2ang=0.529177210d0
+    integer :: nconf, iconf, nat, iat, sd_loop, i
+    real(8) :: sd_s, q_tot, tmp_sd, e_rmse, e_rmse_old
+    real(8) :: bohr2ang=0.529177210d0
+    character(len=40) :: file_name, tt
+    character(len=40) :: format_string, str_nat
+    character(LEN=3),allocatable :: sat(:,:)
     character :: tt_1
+    real(8), allocatable :: gw_1(:), gw_2(:), hardness_1(:), chi_1(:), e_aims(:), e_ref(:), hardness_2(:), e_cent(:), e_err(:)
+    real(8), allocatable :: a(:,:), b(:,:), c(:,:), d(:,:), chi_tot(:,:), qat(:,:)
+    real(8), allocatable :: rat(:,:,:), a_tot(:,:,:), a_tot_inv(:,:,:)
     
-    open(2,file='posinp.rzx.out')
-    read(2,*) nat
-    allocate(sat(nat),rat(3,nat))
-    allocate(chi_1(nat),chi_2(nat))
-    allocate(gw_1(nat),gw_2(nat))
-    allocate(hardness_1(nat),hardness_2(nat))
-    !--------------------------------------------------------------------------------------
-    hardness_2(:) = 0.d0
-    q_tot = 0.d0
-    do iat = 1 , nat
-        read(2,*) tt_1,rat(1,iat),rat(2,iat),rat(3,iat),sat(iat)
-    end do
-    rat = rat/bohr2ang
-    do iat = 1 , nat
-        read(2,*) chi_2(iat)
-    end do
-    read(2,*) tt_1, tt_1, tt_1, tt_1
-    do iat = 1 , nat
-        read(2,*) gw_1(iat),gw_2(iat),hardness_1(iat),chi_1(iat)
-    end do
-    allocate(a(nat,nat) , b(nat,nat) , c(nat,nat) , d(nat,nat))
-    allocate(a_tot(2*nat+1,2*nat+1),chi_tot(2*nat+1))
-    !## calculating a b c d and a_tot matrices
-    call get_mat_cent1(nat,rat,gw_1,gw_2,hardness_1,hardness_2,a,b,c,d)
-    a_tot(1:nat,1:nat) = a(1:nat,1:nat)
-    a_tot(nat+1:2*nat,1:nat) = d(1:nat,1:nat)
-    a_tot(1:nat,nat+1:2*nat) = c(1:nat,1:nat)
-    a_tot(nat+1:2*nat,nat+1:2*nat) = b(1:nat,1:nat)
-    a_tot(2*nat+1,1:2*nat+1)=1
-    a_tot(1:2*nat+1,2*nat+1)=1
-    a_tot((2*nat)+1,(2*nat)+1)=0
+    open(3,file='input.rzx')
+    read(3,*) !'number of configurations: '
+    read(3,*) nconf 
+    read(3,*) !'number of atoms '
+    read(3,*) nat
+    read(3,*) !Steepest_Descent_Step
+    read(3,*) sd_s 
 
-    chi_tot(1:nat) = -1.d0*chi_1(1:nat)
-    chi_tot(nat+1:2*nat) = -1.d0*chi_1(1:nat)
-    chi_tot(2*nat+1) = q_tot 
-    
+    allocate(gw_1(nat), gw_2(nat), hardness_1(nat), hardness_2(nat), chi_1(nat))
+    allocate(e_aims(nconf), e_ref(nconf), e_cent(nconf), e_err(nconf))
+    allocate(sat(nconf,nat), qat(nconf,2*nat+1), chi_tot(nconf,2*nat+1))
+    allocate(a(nat,nat), b(nat,nat), c(nat,nat), d(nat,nat))
+    allocate(rat(nconf,3,nat), a_tot(nconf,2*nat+1,2*nat+1), a_tot_inv(nconf,2*nat+1,2*nat+1))
+
+    read(3,*) !gw_1(iat),gw_2(iat),hardness_1(iat),chi_1(iat)
+    do iat = 1, nat
+            read(3,*) gw_1(iat),gw_2(iat),hardness_1(iat),chi_1(iat)
+    end do
+    !--------------------------------------------------------------------------------------
+    q_tot = 0.d0
+    do iconf = 1 , nconf
+        write(tt,'(I3.3)') iconf
+        file_name='posinp_'//trim(tt)//'.rzx'
+        open(2,file=file_name)
+        read(2,*) !E_FOR_STRUCTURE_IN_EQB., !E_AIMS_FOR_THIS_STRUCTURE
+        read(2,*) e_ref(iconf), e_aims(iconf)
+        write(*,*) e_ref(iconf), e_aims(iconf)
+        do iat = 1 , nat
+            read(2,*) tt_1,rat(iconf,1,iat),rat(iconf,2,iat),rat(iconf,3,iat),sat(iconf,iat)
+            write(*,*) tt_1,rat(iconf,1,iat),rat(iconf,2,iat),rat(iconf,3,iat),sat(iconf,iat)
+        end do
+    end do
+    rat(1:nconf,1:3,1:nat) = rat(1:nconf,1:3,1:nat)/bohr2ang
+    e_aims = e_aims/27.211384500d0
+    e_ref = e_ref/27.211384500d0 
+
+    hardness_2(:) = 0.d0
+    !## calculating a b c d and a_tot matrices
+    do iconf = 1, nconf
+        a = 0.d0
+        b = 0.d0
+        c = 0.d0
+        d = 0.d0
+        call get_mat_cent1(nat,rat(iconf,:,:),gw_1,gw_2,hardness_1,hardness_2,a,b,c,d)
+        a_tot(iconf,1:nat,1:nat) = a(1:nat,1:nat)
+        a_tot(iconf,nat+1:2*nat,1:nat) = d(1:nat,1:nat)
+        a_tot(iconf,1:nat,nat+1:2*nat) = c(1:nat,1:nat)
+        a_tot(iconf,nat+1:2*nat,nat+1:2*nat) = b(1:nat,1:nat)
+        a_tot(iconf,2*nat+1,1:2*nat+1)=1
+        a_tot(iconf,1:2*nat+1,2*nat+1)=1
+        a_tot(iconf,(2*nat)+1,(2*nat)+1)=0
+
+        chi_tot(iconf,1:nat) = -1.d0*chi_1(1:nat)
+        chi_tot(iconf,nat+1:2*nat) = -1.d0*chi_1(1:nat)
+        chi_tot(iconf,2*nat+1) = q_tot 
+        call inv(a_tot(iconf,:,:),2*nat+1,a_tot_inv(iconf,:,:))
+    end do
     
     !## CEP part
-    allocate(a_tot_inv(2*nat+1,2*nat+1),qat(2*nat+1))
-    call inv(a_tot,2*nat+1,a_tot_inv)
     !## Steepest_Descent part
-    e_ref = 15005.d0/27.211384500d0
-    e_aims = 15015.d0/27.211384500d0
-    sd_s = 1.d-3
     do sd_loop = 1 , Huge(sd_loop)
-        if (sd_loop==1) then
-            e_cent = 0.d0
-            call mat_mult(a_tot_inv,chi_tot,2*nat+1,2*nat+1,1,qat)
-            call cal_electrostatic_ann(nat,rat,gw_1,gw_2,qat,e_cent)
-            do i = 1, nat
-                e_cent = e_cent + chi_tot(i)*qat(i) + chi_tot(i+nat)*qat(i+nat) + &
-                              0.5d0*hardness_1(i)*(qat(i)**2) + 0.5d0*hardness_2(i)*(qat(i+nat)**2)
-            end do
-            !e_cent = e_cent*27.211384500d0
-            e_err = sqrt((e_cent + e_ref - e_aims)**2)
-            write(*,*) 'ENERGY cent(eV) = ', e_cent
+        do iconf = 1 , nconf
+            if (sd_loop==1) then
+                e_cent(iconf) = 0.d0
+                call mat_mult(a_tot_inv(iconf,:,:),chi_tot(iconf,:),2*nat+1,2*nat+1,1,qat(iconf,:))
+                call cal_electrostatic_ann(nat,rat(iconf,:,:),gw_1,gw_2,qat(iconf,:),e_cent(iconf))
+                do i = 1, nat
+                    e_cent(iconf) = e_cent(iconf) + chi_tot(iconf,i)*qat(iconf,i) + chi_tot(iconf,i+nat)*qat(iconf,i+nat) + &
+                                  0.5d0*hardness_1(i)*(qat(iconf,i)**2) + 0.5d0*hardness_2(i)*(qat(iconf,i+nat)**2)
+                end do
+                !e_cent = e_cent*27.211384500d0
+                e_err(iconf) = sqrt((e_cent(iconf) + e_ref(iconf) - e_aims(iconf))**2)
+                write(*,*) 'ENERGY cent(eV) = ', e_cent(iconf)
+            else
+                tmp_sd = sd_s*(e_cent(iconf)+e_ref(iconf)-e_aims(iconf))/(e_err(iconf)+1.d-16)
+                chi_tot(iconf,nat+1:2*nat) = chi_tot(iconf,nat+1:2*nat) - tmp_sd*qat(iconf,nat+1:2*nat)
+                !chi_tot(iconf,1:2*nat) = chi_tot(iconf,1:2*nat) - tmp_sd*qat(iconf,1:2*nat)
+                call mat_mult(a_tot_inv(iconf,:,:),chi_tot(iconf,:),2*nat+1,2*nat+1,1,qat(iconf,:))
+                e_cent(iconf) = 0.d0
+                call cal_electrostatic_ann(nat,rat(iconf,:,:),gw_1,gw_2,qat(iconf,:),e_cent(iconf))
+                do i = 1, nat
+                    e_cent(iconf) = e_cent(iconf) + chi_tot(iconf,i)*qat(iconf,i) + chi_tot(iconf,i+nat)*qat(iconf,i+nat) + &
+                                  0.5d0*hardness_1(i)*(qat(iconf,i)**2) + 0.5d0*hardness_2(i)*(qat(iconf,i+nat)**2)
+                end do
+                !e_cent = e_cent*27.211384500d0
+                e_err(iconf) = sqrt((e_cent(iconf) + e_ref(iconf) - e_aims(iconf))**2)
+            end if
+        end do
+        e_rmse_old = e_rmse
+        e_rmse = sqrt(sum(e_err)/nconf)
+        if ((e_rmse-e_rmse_old)<0.d0) then
+            sd_s = sd_s*1.001d0
         else
-            e_err_old = e_err
-            tmp_sd = sd_s*(e_cent+e_ref-e_aims)/e_err
-            !chi_tot(1:2*nat) = chi_tot(1:2*nat) - tmp_sd*qat(1:2*nat)
-            chi_tot(nat+1:2*nat) = chi_tot(nat+1:2*nat) - tmp_sd*qat(nat+1:2*nat)
-            call mat_mult(a_tot_inv,chi_tot,2*nat+1,2*nat+1,1,qat)
-            e_cent = 0.d0
-            call cal_electrostatic_ann(nat,rat,gw_1,gw_2,qat,e_cent)
-            do i = 1, nat
-                e_cent = e_cent + chi_tot(i)*qat(i) + chi_tot(i+nat)*qat(i+nat) + &
-                              0.5d0*hardness_1(i)*(qat(i)**2) + 0.5d0*hardness_2(i)*(qat(i+nat)**2)
-            end do
-            !e_cent = e_cent*27.211384500d0
-            e_err = sqrt((e_cent + e_ref - e_aims)**2)
+            sd_s = sd_s*0.99d0
         end if
-        if ((e_err-e_err_old)<0.d0) then
-            sd_s = sd_s*1.05d0
-        else
-            sd_s = sd_s*0.8d0
-        end if
-        write(*,*) 'ITER, E_CENT, E_DFT, E_ERR, SD_S = ',sd_loop,e_cent, e_aims-e_ref, e_err, sd_s,tmp_sd
-        !if (e_err<1.d-8) exit
-        if ((abs(e_err-e_err_old))<1.d-16) exit
+        write(*,*) 'ITER, e_rmse = ',sd_loop,e_rmse, sd_s, tmp_sd, e_err
+        if (abs(e_rmse-e_rmse_old)<1.d-16) exit
+        if (isnan(e_rmse)) exit
     end do
-    write(*,*) chi_tot
-    write(*,*) qat
+    write(str_nat,'(I2.2)') 2*nat+1
+    format_string = '(a6,I6.6,'//trim(str_nat)//'es14.6)'
+    !write(*,*) format_string
+    do iconf = 1, nconf
+        write(*,trim(format_string)) 'chi : ', iconf, chi_tot(iconf,:)
+        write(*,trim(format_string)) 'qat : ', iconf, qat(iconf,:)
+    end do
+    !write(*,*) chi_tot
+    !write(*,*) qat
 !*****************************************************************************************
 
 !deallocation part
