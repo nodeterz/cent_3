@@ -11,6 +11,9 @@ program main
     real(8), allocatable :: gw_1(:), gw_2(:), hardness_1(:), chi_1(:), e_aims(:), e_ref(:), hardness_2(:), e_cent(:), e_err(:)
     real(8), allocatable :: a(:,:), b(:,:), c(:,:), d(:,:), chi_tot(:,:), qat(:,:)
     real(8), allocatable :: rat(:,:,:), a_tot(:,:,:), a_tot_inv(:,:,:)
+    integer :: gw_Mg_1_loop, gw_Mg_2_loop, gw_O_1_loop, gw_O_2_loop, hardness_O_2_loop, hardness_Mg_2_loop, range_loop, i_loop 
+    real(8) :: gw_Mg_1, gw_Mg_2, gw_O_1, gw_O_2, hardness_O_2, hardness_Mg_2, gw_step, hardness_step 
+    real(8) :: range_6, progress
     
     open(3,file='input.rzx')
     read(3,*) !'number of configurations: '
@@ -28,7 +31,7 @@ program main
 
     read(3,*) !gw_1(iat),gw_2(iat),hardness_1(iat),chi_1(iat)
     do iat = 1, nat
-            read(3,*) gw_1(iat),gw_2(iat),hardness_1(iat),chi_1(iat)
+            read(3,*) hardness_1(iat),chi_1(iat)
     end do
     !--------------------------------------------------------------------------------------
     q_tot = 0.d0
@@ -38,86 +41,133 @@ program main
         open(2,file=file_name)
         read(2,*) !E_FOR_STRUCTURE_IN_EQB., !E_AIMS_FOR_THIS_STRUCTURE
         read(2,*) e_ref(iconf), e_aims(iconf)
-        write(*,*) e_ref(iconf), e_aims(iconf)
+        !write(*,*) e_ref(iconf), e_aims(iconf)
         do iat = 1 , nat
             read(2,*) tt_1,rat(iconf,1,iat),rat(iconf,2,iat),rat(iconf,3,iat),sat(iconf,iat)
-            write(*,*) tt_1,rat(iconf,1,iat),rat(iconf,2,iat),rat(iconf,3,iat),sat(iconf,iat)
+            !write(*,*) tt_1,rat(iconf,1,iat),rat(iconf,2,iat),rat(iconf,3,iat),sat(iconf,iat)
         end do
     end do
     rat(1:nconf,1:3,1:nat) = rat(1:nconf,1:3,1:nat)/bohr2ang
     e_aims = e_aims/27.211384500d0
     e_ref = e_ref/27.211384500d0 
+    range_loop = 10
+    range_6 = range_loop**6
+    gw_step = 0.3d0
+    hardness_step = 0.02
+    i_loop = 0.d0
+    write(66,'(4a8,5a14,a19,a16,a16)') 'progress','i_loop','sd_loop' ,'e_rmse', 'sd_s' , 'gw_Mg_1' , 'gw_Mg_2' &
+                ,'gw_O_1' ,'gw_O_2' ,'hardness_O_2' ,'hardness_Mg_2'
+        gw_Mg_1 = 1.d0-gw_step
+    do gw_Mg_1_loop=1, range_loop
+        gw_Mg_1=gw_Mg_1 +gw_step
+        gw_Mg_2 = 1.d0-gw_step
+    do gw_Mg_2_loop=1, range_loop
+        gw_Mg_2=gw_Mg_2 +gw_step
+        gw_O_1 = 1.d0-gw_step
+    do gw_O_1_loop =1, range_loop
+        gw_O_1=gw_O_1  +gw_step
+        gw_O_2 = 1.d0-gw_step
+    do gw_O_2_loop =1, range_loop
+        gw_O_2 =gw_O_2  +gw_step
+        hardness_O_2 = 0.d0-hardness_step
+    do hardness_O_2_loop=1, range_loop
+        hardness_O_2 = hardness_O_2 + hardness_step
+        hardness_Mg_2 = 0.d0-hardness_step
+    do hardness_Mg_2_loop=1, range_loop
+        hardness_Mg_2 = hardness_Mg_2 + hardness_step
+        i_loop = i_loop+1
+        progress = (i_loop*100.d0)/(range_6)
 
-    hardness_2(:) = 0.d0
-    !## calculating a b c d and a_tot matrices
-    do iconf = 1, nconf
-        a = 0.d0
-        b = 0.d0
-        c = 0.d0
-        d = 0.d0
-        call get_mat_cent1(nat,rat(iconf,:,:),gw_1,gw_2,hardness_1,hardness_2,a,b,c,d)
-        a_tot(iconf,1:nat,1:nat) = a(1:nat,1:nat)
-        a_tot(iconf,nat+1:2*nat,1:nat) = d(1:nat,1:nat)
-        a_tot(iconf,1:nat,nat+1:2*nat) = c(1:nat,1:nat)
-        a_tot(iconf,nat+1:2*nat,nat+1:2*nat) = b(1:nat,1:nat)
-        a_tot(iconf,2*nat+1,1:2*nat+1)=1
-        a_tot(iconf,1:2*nat+1,2*nat+1)=1
-        a_tot(iconf,(2*nat)+1,(2*nat)+1)=0
+        gw_1(1:nat/2)   =   gw_Mg_1
+        gw_1(nat/2+1:nat) = gw_O_1
+        gw_2(1:nat/2)   =   gw_Mg_2
+        gw_2(nat/2+1:nat) = gw_O_2
+        hardness_2(1:nat/2) = hardness_Mg_2 
+        hardness_2(nat/2+1:nat) = hardness_O_2 
+        
+        !## calculating a b c d and a_tot matrices
+        do iconf = 1, nconf
+            a = 0.d0
+            b = 0.d0
+            c = 0.d0
+            d = 0.d0
+            call get_mat_cent1(nat,rat(iconf,:,:),gw_1,gw_2,hardness_1,hardness_2,a,b,c,d)
+            a_tot(iconf,1:nat,1:nat) = a(1:nat,1:nat)
+            a_tot(iconf,nat+1:2*nat,1:nat) = d(1:nat,1:nat)
+            a_tot(iconf,1:nat,nat+1:2*nat) = c(1:nat,1:nat)
+            a_tot(iconf,nat+1:2*nat,nat+1:2*nat) = b(1:nat,1:nat)
+            a_tot(iconf,2*nat+1,1:2*nat+1)=1
+            a_tot(iconf,1:2*nat+1,2*nat+1)=1
+            a_tot(iconf,(2*nat)+1,(2*nat)+1)=0
 
-        chi_tot(iconf,1:nat) = -1.d0*chi_1(1:nat)
-        chi_tot(iconf,nat+1:2*nat) = -1.d0*chi_1(1:nat)
-        chi_tot(iconf,2*nat+1) = q_tot 
-        call inv(a_tot(iconf,:,:),2*nat+1,a_tot_inv(iconf,:,:))
-    end do
-    
-    !## CEP part
-    !## Steepest_Descent part
-    do sd_loop = 1 , Huge(sd_loop)
-        do iconf = 1 , nconf
-            if (sd_loop==1) then
-                e_cent(iconf) = 0.d0
-                call mat_mult(a_tot_inv(iconf,:,:),chi_tot(iconf,:),2*nat+1,2*nat+1,1,qat(iconf,:))
-                call cal_electrostatic_ann(nat,rat(iconf,:,:),gw_1,gw_2,qat(iconf,:),e_cent(iconf))
-                do i = 1, nat
-                    e_cent(iconf) = e_cent(iconf) + chi_tot(iconf,i)*qat(iconf,i) + chi_tot(iconf,i+nat)*qat(iconf,i+nat) + &
-                                  0.5d0*hardness_1(i)*(qat(iconf,i)**2) + 0.5d0*hardness_2(i)*(qat(iconf,i+nat)**2)
-                end do
-                !e_cent = e_cent*27.211384500d0
-                e_err(iconf) = sqrt((e_cent(iconf) + e_ref(iconf) - e_aims(iconf))**2)
-                write(*,*) 'ENERGY cent(eV) = ', e_cent(iconf)
-            else
-                tmp_sd = sd_s*(e_cent(iconf)+e_ref(iconf)-e_aims(iconf))/(e_err(iconf)+1.d-16)
-                chi_tot(iconf,nat+1:2*nat) = chi_tot(iconf,nat+1:2*nat) - tmp_sd*qat(iconf,nat+1:2*nat)
-                !chi_tot(iconf,1:2*nat) = chi_tot(iconf,1:2*nat) - tmp_sd*qat(iconf,1:2*nat)
-                call mat_mult(a_tot_inv(iconf,:,:),chi_tot(iconf,:),2*nat+1,2*nat+1,1,qat(iconf,:))
-                e_cent(iconf) = 0.d0
-                call cal_electrostatic_ann(nat,rat(iconf,:,:),gw_1,gw_2,qat(iconf,:),e_cent(iconf))
-                do i = 1, nat
-                    e_cent(iconf) = e_cent(iconf) + chi_tot(iconf,i)*qat(iconf,i) + chi_tot(iconf,i+nat)*qat(iconf,i+nat) + &
-                                  0.5d0*hardness_1(i)*(qat(iconf,i)**2) + 0.5d0*hardness_2(i)*(qat(iconf,i+nat)**2)
-                end do
-                !e_cent = e_cent*27.211384500d0
-                e_err(iconf) = sqrt((e_cent(iconf) + e_ref(iconf) - e_aims(iconf))**2)
+            chi_tot(iconf,1:nat) = -1.d0*chi_1(1:nat)
+            chi_tot(iconf,nat+1:2*nat) = -1.d0*chi_1(1:nat)
+            chi_tot(iconf,2*nat+1) = q_tot 
+            call inv(a_tot(iconf,:,:),2*nat+1,a_tot_inv(iconf,:,:))
+        end do !iconf
+        
+        !## CEP part
+        !## Steepest_Descent part
+        do sd_loop = 1 , Huge(sd_loop)
+            do iconf = 1 , nconf
+                if (sd_loop==1) then
+                    e_cent(iconf) = 0.d0
+                    call mat_mult(a_tot_inv(iconf,:,:),chi_tot(iconf,:),2*nat+1,2*nat+1,1,qat(iconf,:))
+                    call cal_electrostatic_ann(nat,rat(iconf,:,:),gw_1,gw_2,qat(iconf,:),e_cent(iconf))
+                    do i = 1, nat
+                        e_cent(iconf) = e_cent(iconf) + chi_tot(iconf,i)*qat(iconf,i) + chi_tot(iconf,i+nat)*qat(iconf,i+nat) + &
+                                      0.5d0*hardness_1(i)*(qat(iconf,i)**2) + 0.5d0*hardness_2(i)*(qat(iconf,i+nat)**2)
+                    end do
+                    !e_cent = e_cent*27.211384500d0
+                    e_err(iconf) = sqrt((e_cent(iconf) + e_ref(iconf) - e_aims(iconf))**2)
+                    !write(*,*) 'ENERGY cent(eV) = ', e_cent(iconf)
+                else
+                    tmp_sd = sd_s*(e_cent(iconf)+e_ref(iconf)-e_aims(iconf))/(e_err(iconf)+1.d-16)
+                    chi_tot(iconf,nat+1:2*nat) = chi_tot(iconf,nat+1:2*nat) - tmp_sd*qat(iconf,nat+1:2*nat)
+                    !chi_tot(iconf,1:2*nat) = chi_tot(iconf,1:2*nat) - tmp_sd*qat(iconf,1:2*nat)
+                    call mat_mult(a_tot_inv(iconf,:,:),chi_tot(iconf,:),2*nat+1,2*nat+1,1,qat(iconf,:))
+                    e_cent(iconf) = 0.d0
+                    call cal_electrostatic_ann(nat,rat(iconf,:,:),gw_1,gw_2,qat(iconf,:),e_cent(iconf))
+                    do i = 1, nat
+                        e_cent(iconf) = e_cent(iconf) + chi_tot(iconf,i)*qat(iconf,i) + chi_tot(iconf,i+nat)*qat(iconf,i+nat) + &
+                                      0.5d0*hardness_1(i)*(qat(iconf,i)**2) + 0.5d0*hardness_2(i)*(qat(iconf,i+nat)**2)
+                    end do
+                    !e_cent = e_cent*27.211384500d0
+                    e_err(iconf) = sqrt((e_cent(iconf) + e_ref(iconf) - e_aims(iconf))**2)
+                end if
+            end do ! iconf in sd_loop
+            e_rmse_old = e_rmse
+            e_rmse = sqrt(sum(e_err)/nconf)*27.211384500d0
+            if ((e_rmse-e_rmse_old)<0.d0) then
+                    sd_s = sd_s*1.01d0
+                else
+                    sd_s = sd_s*0.95d0
             end if
+            !if ((e_rmse-e_rmse_old)<1.d-10) sd_s = sd_s*0.99
+            !write(*,*) e_rmse, sd_s, tmp_sd
+            if (abs(e_rmse-e_rmse_old)<1.d-16) exit
+            !if (abs(e_rmse)<1.d-16) exit
+            if (isnan(e_rmse)) exit
+        end do ! sd_loop
+        write(66,'(f6.2,2i8,8es14.6)') progress ,i_loop,sd_loop , e_rmse, sd_s , gw_Mg_1 &
+                                ,gw_Mg_2 ,gw_O_1 ,gw_O_2 ,hardness_O_2 ,hardness_Mg_2
+        do iconf = 1,nconf
+         write(77,'(i10,i3,9es14.6)') i_loop,iconf, chi_tot(iconf,:)
+         write(88,'(i10,i3,9es14.6)') i_loop,iconf, qat(iconf,:)
         end do
-        e_rmse_old = e_rmse
-        e_rmse = sqrt(sum(e_err)/nconf)
-        if ((e_rmse-e_rmse_old)<0.d0) then
-            sd_s = sd_s*1.001d0
-        else
-            sd_s = sd_s*0.99d0
-        end if
-        write(*,*) 'ITER, e_rmse = ',sd_loop,e_rmse, sd_s, tmp_sd, e_err
-        if (abs(e_rmse-e_rmse_old)<1.d-16) exit
-        if (isnan(e_rmse)) exit
-    end do
-    write(str_nat,'(I2.2)') 2*nat+1
-    format_string = '(a6,I6.6,'//trim(str_nat)//'es14.6)'
-    !write(*,*) format_string
-    do iconf = 1, nconf
-        write(*,trim(format_string)) 'chi : ', iconf, chi_tot(iconf,:)
-        write(*,trim(format_string)) 'qat : ', iconf, qat(iconf,:)
-    end do
+    end do !gw_Mg_1_loop
+    end do !gw_Mg_2_loop
+    end do !gw_O_1_loop 
+    end do !gw_O_2_loop 
+    end do !hardness_O_2_loop
+    end do !hardness_Mg_2_loop
+    !write(str_nat,'(I2.2)') 2*nat+1
+    !format_string = '(a6,I6.6,'//trim(str_nat)//'es14.6)'
+    !!write(*,*) format_string
+    !do iconf = 1, nconf
+    !    write(*,trim(format_string)) 'chi : ', iconf, chi_tot(iconf,:)
+    !    write(*,trim(format_string)) 'qat : ', iconf, qat(iconf,:)
+    !end do
     !write(*,*) chi_tot
     !write(*,*) qat
 !*****************************************************************************************
