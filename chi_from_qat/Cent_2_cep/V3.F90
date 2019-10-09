@@ -108,6 +108,7 @@ program main
         
         !## CEP part
         !## Steepest_Descent part
+        e_rmse = 0.d0
         do sd_loop = 1 , Huge(sd_loop)
             do iconf = 1 , nconf
                 if (sd_loop==1) then
@@ -119,10 +120,10 @@ program main
                                       0.5d0*hardness_1(i)*(qat(iconf,i)**2) + 0.5d0*hardness_2(i)*(qat(iconf,i+nat)**2)
                     end do
                     !e_cent = e_cent*27.211384500d0
-                    e_err(iconf) = sqrt((e_cent(iconf) + e_ref(iconf) - e_aims(iconf))**2)
+                    e_err(iconf) = (e_cent(iconf) + e_ref(iconf) - e_aims(iconf))**2
                     !write(*,*) 'ENERGY cent(eV) = ', e_cent(iconf)
                 else
-                    tmp_sd = sd_s*(e_cent(iconf)+e_ref(iconf)-e_aims(iconf))/(e_err(iconf)+1.d-16)
+                    tmp_sd = 2*sd_s*(e_cent(iconf)+e_ref(iconf)-e_aims(iconf))/abs(e_cent(iconf)+e_ref(iconf)-e_aims(iconf)+1.d-100)
                     chi_tot(iconf,nat+1:2*nat) = chi_tot(iconf,nat+1:2*nat) - tmp_sd*qat(iconf,nat+1:2*nat)
                     !chi_tot(iconf,1:2*nat) = chi_tot(iconf,1:2*nat) - tmp_sd*qat(iconf,1:2*nat)
                     call mat_mult(a_tot_inv(iconf,:,:),chi_tot(iconf,:),2*nat+1,2*nat+1,1,qat(iconf,:))
@@ -133,21 +134,24 @@ program main
                                       0.5d0*hardness_1(i)*(qat(iconf,i)**2) + 0.5d0*hardness_2(i)*(qat(iconf,i+nat)**2)
                     end do
                     !e_cent = e_cent*27.211384500d0
-                    e_err(iconf) = sqrt((e_cent(iconf) + e_ref(iconf) - e_aims(iconf))**2)
+                    e_err(iconf) = (e_cent(iconf) + e_ref(iconf) - e_aims(iconf))**2
                 end if
             end do ! iconf in sd_loop
             e_rmse_old = e_rmse
             e_rmse = sqrt(sum(e_err)/nconf)*27.211384500d0
             if ((e_rmse-e_rmse_old)<0.d0) then
-                    sd_s = sd_s*1.01d0
+                    sd_s = sd_s*1.05d0
                 else
-                    sd_s = sd_s*0.95d0
+                    sd_s = sd_s*0.90d0
             end if
             !if ((e_rmse-e_rmse_old)<1.d-10) sd_s = sd_s*0.99
             !write(*,*) e_rmse, sd_s, tmp_sd
             if (abs(e_rmse-e_rmse_old)<1.d-16) exit
-            !if (abs(e_rmse)<1.d-16) exit
-            if (isnan(e_rmse)) exit
+            !if (abs(e_rmse)<1.d-8) exit
+            if (isnan(e_rmse)) then
+                write(*,*) 'ERROR :',e_err, tmp_sd
+                exit
+            end if
         end do ! sd_loop
         write(66,'(f6.2,2i8,8es14.6)') progress ,i_loop,sd_loop , e_rmse, sd_s , gw_Mg_1 &
                                 ,gw_Mg_2 ,gw_O_1 ,gw_O_2 ,hardness_O_2 ,hardness_Mg_2
