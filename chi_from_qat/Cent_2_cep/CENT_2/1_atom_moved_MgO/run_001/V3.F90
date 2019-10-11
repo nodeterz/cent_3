@@ -16,7 +16,7 @@ program main
     real(8) :: range_6, progress
     
     open(3,file='input.rzx')
-    open(99,file='rmse.rzx')
+    open(66,file='rmse.rzx')
     open(77,file='chi.rzx')
     open(88,file='qat.rzx')
     read(3,*) !'number of configurations: '
@@ -58,10 +58,7 @@ program main
     gw_step = 0.5d0
     hardness_step = 0.07
     i_loop = 0.d0
-    write(*,*) 'Data Loaded'
-    write(*,'(4a8,5a14,a19,a16,a16)') 'progress','i_loop','sd_loop' ,'e_rmse', 'sd_s' , 'gw_Mg_1' , 'gw_Mg_2' &
-                ,'gw_O_1' ,'gw_O_2' ,'hardness_O_2' ,'hardness_Mg_2'
-    write(99,'(4a8,5a14,a19,a16,a16)') 'progress','i_loop','sd_loop' ,'e_rmse', 'sd_s' , 'gw_Mg_1' , 'gw_Mg_2' &
+    write(66,'(4a8,5a14,a19,a16,a16)') 'progress','i_loop','sd_loop' ,'e_rmse', 'sd_s' , 'gw_Mg_1' , 'gw_Mg_2' &
                 ,'gw_O_1' ,'gw_O_2' ,'hardness_O_2' ,'hardness_Mg_2'
 
         gw_Mg_1 = 1.d0-gw_step
@@ -161,7 +158,7 @@ program main
                 exit
             end if
         end do ! sd_loop
-        write(*,'(f6.2,2i8,8es14.6)') progress ,i_loop,sd_loop , e_rmse, sd_s , gw_Mg_1 &
+        write(66,'(f6.2,2i8,8es14.6)') progress ,i_loop,sd_loop , e_rmse, sd_s , gw_Mg_1 &
                                 ,gw_Mg_2 ,gw_O_1 ,gw_O_2 ,hardness_O_2 ,hardness_Mg_2
         do iconf = 1,nconf
          write(77,'(i10,i3,9es14.6)') i_loop,iconf, chi_tot(iconf,:)
