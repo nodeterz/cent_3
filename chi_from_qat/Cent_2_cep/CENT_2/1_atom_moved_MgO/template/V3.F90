@@ -53,10 +53,10 @@ program main
     rat(1:nconf,1:3,1:nat) = rat(1:nconf,1:3,1:nat)/bohr2ang
     e_aims = e_aims/27.211384500d0
     e_ref = e_ref/27.211384500d0 
-    range_loop = 3
+    range_loop = 10
     range_6 = range_loop**6
-    gw_step = 0.5d0
-    hardness_step = 0.07
+    gw_step = 0.25d0
+    hardness_step = 0.02
     i_loop = 0.d0
     write(66,'(4a8,5a14,a19,a16,a16)') 'progress','i_loop','sd_loop' ,'e_rmse', 'sd_s' , 'gw_Mg_1' , 'gw_Mg_2' &
                 ,'gw_O_1' ,'gw_O_2' ,'hardness_O_2' ,'hardness_Mg_2'
@@ -114,7 +114,7 @@ program main
         !## CEP part
         !## Steepest_Descent part
         e_rmse = 0.d0
-        do sd_loop = 1 , Huge(sd_loop)
+        do sd_loop = 1 , 1.d+7!Huge(sd_loop)
             do iconf = 1 , nconf
                 if (sd_loop==1) then
                     e_cent(iconf) = 0.d0
