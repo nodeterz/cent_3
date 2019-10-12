@@ -16,9 +16,9 @@ program main
     real(8) :: range_6, progress
     
     open(3,file='input.rzx')
-    open(66,file='rmse.rzx')
-    open(77,file='chi.rzx')
-    open(88,file='qat.rzx')
+    open(13660716,file='rmse.rzx')
+    open(13701108,file='chi.rzx')
+    open(13770514,file='qat.rzx')
     read(3,*) !'number of configurations: '
     read(3,*) nconf 
     read(3,*) !'number of atoms '
@@ -58,7 +58,7 @@ program main
     gw_step = 0.25d0
     hardness_step = 0.02
     i_loop = 0.d0
-    write(66,'(4a8,5a14,a19,a16,a16)') 'progress','i_loop','sd_loop' ,'e_rmse', 'sd_s' , 'gw_Mg_1' , 'gw_Mg_2' &
+    write(13660716,'(4a8,5a14,a19,a16,a16)') 'progress','i_loop','sd_loop' ,'e_rmse', 'sd_s' , 'gw_Mg_1' , 'gw_Mg_2' &
                 ,'gw_O_1' ,'gw_O_2' ,'hardness_O_2' ,'hardness_Mg_2'
 
         gw_Mg_1 = 1.d0-gw_step
@@ -114,7 +114,7 @@ program main
         !## CEP part
         !## Steepest_Descent part
         e_rmse = 0.d0
-        do sd_loop = 1 , 1.d+7!Huge(sd_loop)
+        do sd_loop = 1 , 1000000!Huge(sd_loop)
             do iconf = 1 , nconf
                 if (sd_loop==1) then
                     e_cent(iconf) = 0.d0
@@ -158,11 +158,11 @@ program main
                 exit
             end if
         end do ! sd_loop
-        write(66,'(f6.2,2i8,8es14.6)') progress ,i_loop,sd_loop , e_rmse, sd_s , gw_Mg_1 &
+        write(13660716,'(f6.2,2i8,8es14.6)') progress ,i_loop,sd_loop , e_rmse, sd_s , gw_Mg_1 &
                                 ,gw_Mg_2 ,gw_O_1 ,gw_O_2 ,hardness_O_2 ,hardness_Mg_2
         do iconf = 1,nconf
-         write(77,'(i10,i3,9es14.6)') i_loop,iconf, chi_tot(iconf,:)
-         write(88,'(i10,i3,9es14.6)') i_loop,iconf, qat(iconf,:)
+         write(13701108,'(i10,i3,9es14.6)') i_loop,iconf, chi_tot(iconf,:)
+         write(13770514,'(i10,i3,9es14.6)') i_loop,iconf, qat(iconf,:)
         end do
     end do !gw_Mg_1_loop
     end do !gw_Mg_2_loop
