@@ -1,7 +1,7 @@
 program main
     !use F95_LAPACK
     implicit none
-    integer :: nconf, iconf, nat, iat, sd_loop, i
+    integer :: nconf, iconf, nat, iat, sd_loop, i, chi_loop
     real(8) :: sd_s, sd_s_inp, q_tot, tmp_sd, e_rmse, e_rmse_old
     real(8) :: bohr2ang=0.529177210d0
     character(len=40) :: file_name, tt
@@ -53,10 +53,10 @@ program main
     rat(1:nconf,1:3,1:nat) = rat(1:nconf,1:3,1:nat)/bohr2ang
     e_aims = e_aims/27.211384500d0
     e_ref = e_ref/27.211384500d0 
-    range_loop = 5
+    range_loop = 4
     range_6 = range_loop**6
-    gw_step = 0.5d0
-    hardness_step = 0.04
+    gw_step = 0.7d0
+    hardness_step = 0.03
     i_loop = 0.d0
     write(13660716,'(4a8,5a14,a19,a16,a12)') 'progress','i_loop','sd_loop' ,'e_rmse', 'sd_s' , 'gw_Mg_1' , 'gw_Mg_2' &
                 ,'gw_O_1' ,'gw_O_2' ,'hardness_O_2' ,'hardness_Mg_2'
