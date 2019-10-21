@@ -1,6 +1,0 @@
-#!/bin/sh
-#SBATCH --job-name="CENT"
-#SBATCH -n 1
-#SBATCH --output=bachoutput
-
-run_2.sh > o1

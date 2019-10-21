@@ -14,6 +14,10 @@ program main
     integer :: gw_Mg_1_loop, gw_Mg_2_loop, gw_O_1_loop, gw_O_2_loop, hardness_O_2_loop, hardness_Mg_2_loop, range_loop, i_loop 
     real(8) :: gw_Mg_1, gw_Mg_2, gw_O_1, gw_O_2, hardness_O_2, hardness_Mg_2, gw_step, hardness_step 
     real(8) :: range_6, progress
+    real(8) :: chi_1_mean_1, chi_1_std_1, chi_1_mean_2, chi_1_std_2
+    real(8) :: chi_2_mean_1,chi_2_std_1, chi_2_mean_2,chi_2_std_2
+    real(8) :: qat_1_mean_1,qat_1_std_1, qat_1_mean_2,qat_1_std_2
+    real(8) :: qat_2_mean_1,qat_2_std_1, qat_2_mean_2,qat_2_std_2
     
     open(3,file='input.rzx')
     open(13660716,file='rmse.rzx')
@@ -163,7 +167,7 @@ program main
        ! end do
         !## Steepest_Descent part
         e_rmse = 0.d0
-        do sd_loop = 1 , 1000!Huge(sd_loop)
+        do sd_loop = 1 , 10000!Huge(sd_loop)
             do iconf = 1 , nconf
                 if (sd_loop==1) then
                     e_cent(iconf) = 0.d0
@@ -201,6 +205,7 @@ program main
             !if ((e_rmse-e_rmse_old)<1.d-10) sd_s = sd_s*0.99
             !write(*,*) e_rmse, sd_s, tmp_sd
             if ((abs(e_rmse-e_rmse_old)<1.d-16) .and. (e_rmse<1.d-2)) exit
+            if (abs(e_rmse)<1.d-3) exit
             !if (abs(e_rmse)<1.d-4) exit
             if (isnan(e_rmse)) then
                 write(*,*) 'ERROR :',e_err, tmp_sd
@@ -208,10 +213,21 @@ program main
             end if
         end do ! sd_loop
         write(13660716,'(f6.3,2i8,8es14.6)') progress ,i_loop,sd_loop , e_rmse, sd_s , gw_Mg_1 &
-                                ,gw_Mg_2 ,gw_O_1 ,gw_O_2 ,hardness_O_2 ,hardness_Mg_2
+                                            ,gw_Mg_2 ,gw_O_1 ,gw_O_2 ,hardness_O_2 ,hardness_Mg_2
         do iconf = 1,nconf
-         write(13701108,'(i10,i3,9es14.6)') i_loop,iconf, chi_tot(iconf,:)
-         write(13770514,'(i10,i3,9es14.6)') i_loop,iconf, qat(iconf,:)
+           call std_mean(chi_tot(iconf,1:nat/2),nat/2,chi_1_mean_1,chi_1_std_1)
+           call std_mean(chi_tot(iconf,nat/2+1:nat),nat/2,chi_1_mean_2,chi_1_std_2)
+           call std_mean(chi_tot(iconf,nat+1:nat+nat/2),nat/2,chi_2_mean_1,chi_2_std_1)
+           call std_mean(chi_tot(iconf,nat+nat/2+1:2*nat),nat/2,chi_2_mean_2,chi_2_std_2)
+
+           call std_mean(qat(iconf,1:nat/2),nat/2,qat_1_mean_1,qat_1_std_1)
+           call std_mean(qat(iconf,nat/2+1:nat),nat/2,qat_1_mean_2,qat_1_std_2)
+           call std_mean(qat(iconf,nat+1:nat+nat/2),nat/2,qat_2_mean_1,qat_2_std_1)
+           call std_mean(qat(iconf,nat+nat/2+1:2*nat),nat/2,qat_2_mean_2,qat_2_std_2)
+         write(13701108,'(i9,i6,8es14.6)') i_loop,iconf, chi_1_mean_1, chi_1_std_1, chi_1_mean_2, chi_1_std_2,&
+                                            chi_2_mean_1,chi_2_std_1, chi_2_mean_2,chi_2_std_2
+         write(13770514,'(i9,i6,8es14.6)') i_loop,iconf, qat_1_mean_1,qat_1_std_1, qat_1_mean_2,qat_1_std_2,&
+                                            qat_2_mean_1,qat_2_std_1, qat_2_mean_2,qat_2_std_2
         end do
     end do !gw_Mg_1_loop
     end do !gw_Mg_2_loop
@@ -354,3 +370,12 @@ subroutine cal_electrostatic_ann(nat,rat,gw_1,gw_2,qat,epot)
         end do
     end do
 end subroutine 
+!*****************************************************************************************
+subroutine std_mean(a,len_a,mean_a,std_a)
+    implicit none
+    integer, intent(in) :: len_a
+    real(8), intent(in) :: a(len_a)
+    real(8), intent(out):: mean_a, std_a
+    mean_a = sum(a)/len_a
+    std_a = sqrt(sum((a(:)-mean_a)**2)/(len_a-1.d0))
+end subroutine

@@ -8,3 +8,8 @@ cp -r template run_07  && cd run_07  && cp ../inputs/input.rzx_07 ./input.rzx &&
 cp -r template run_08  && cd run_08  && cp ../inputs/input.rzx_08 ./input.rzx && sbatch run > submit && cd ..
 cp -r template run_09  && cd run_09  && cp ../inputs/input.rzx_09 ./input.rzx && sbatch run > submit && cd ..
 cp -r template run_10  && cd run_10  && cp ../inputs/input.rzx_10 ./input.rzx && sbatch run > submit && cd ..
+cp -r template run_11  && cd run_11  && cp ../inputs/input.rzx_11 ./input.rzx && sbatch run > submit && cd ..
+cp -r template run_12  && cd run_12  && cp ../inputs/input.rzx_12 ./input.rzx && sbatch run > submit && cd ..
+cp -r template run_13  && cd run_13  && cp ../inputs/input.rzx_13 ./input.rzx && sbatch run > submit && cd ..
+cp -r template run_14  && cd run_14  && cp ../inputs/input.rzx_14 ./input.rzx && sbatch run > submit && cd ..
+cp -r template run_15  && cd run_15  && cp ../inputs/input.rzx_15 ./input.rzx && sbatch run > submit && cd ..
