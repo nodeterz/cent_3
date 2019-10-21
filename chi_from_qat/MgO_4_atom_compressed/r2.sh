@@ -1,0 +1,13 @@
+cd 000 && cp ../../V2.F90 . && run.sh > results && pwd && cat results && cat posinp.rzx && echo '--------------------------------------------------------------------------' &&  cd ..
+cd 001 && cp ../../V2.F90 . && run.sh > results && pwd && cat results && cat posinp.rzx && echo '--------------------------------------------------------------------------' &&  cd ..
+cd 002 && cp ../../V2.F90 . && run.sh > results && pwd && cat results && cat posinp.rzx && echo '--------------------------------------------------------------------------' &&  cd ..
+cd 003 && cp ../../V2.F90 . && run.sh > results && pwd && cat results && cat posinp.rzx && echo '--------------------------------------------------------------------------' &&  cd ..
+cd 004 && cp ../../V2.F90 . && run.sh > results && pwd && cat results && cat posinp.rzx && echo '--------------------------------------------------------------------------' &&  cd ..
+cd 005 && cp ../../V2.F90 . && run.sh > results && pwd && cat results && cat posinp.rzx && echo '--------------------------------------------------------------------------' &&  cd ..
+cd 007 && cp ../../V2.F90 . && run.sh > results && pwd && cat results && cat posinp.rzx && echo '--------------------------------------------------------------------------' &&  cd ..
+cd 010 && cp ../../V2.F90 . && run.sh > results && pwd && cat results && cat posinp.rzx && echo '--------------------------------------------------------------------------' &&  cd ..
+cd 012 && cp ../../V2.F90 . && run.sh > results && pwd && cat results && cat posinp.rzx && echo '--------------------------------------------------------------------------' &&  cd ..
+cd 015 && cp ../../V2.F90 . && run.sh > results && pwd && cat results && cat posinp.rzx && echo '--------------------------------------------------------------------------' &&  cd ..
+cd 020 && cp ../../V2.F90 . && run.sh > results && pwd && cat results && cat posinp.rzx && echo '--------------------------------------------------------------------------' &&  cd ..
+cd 025 && cp ../../V2.F90 . && run.sh > results && pwd && cat results && cat posinp.rzx && echo '--------------------------------------------------------------------------' &&  cd ..
+cd 030 && cp ../../V2.F90 . && run.sh > results && pwd && cat results && cat posinp.rzx && echo '--------------------------------------------------------------------------' &&  cd ..

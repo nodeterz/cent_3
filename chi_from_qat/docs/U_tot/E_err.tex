@@ -1,0 +1,21 @@
+\documentclass{article}
+\begin{document}
+%	\begin{equation}
+%	E_{rmse}=\sqrt{\frac{\sum_{i=1}^{nconf}E_{err}^i}{nconf}}
+%	\end{equation}
+	\begin{equation}
+	E_{err}^i=\sqrt{(E_{cent}^i+E_{ref}^i-E_{aims}^i)^2}
+		\end{equation}
+	\begin{equation}
+	E_{err}=\sum_{i=1}^{nconf} E_{err}^i
+	\end{equation}
+	\begin{equation}
+	\frac{\partial E_{err}}{\partial \chi_i}=\frac{(E_{cent}^i+E_{ref}^i-E_{aims}^i)}{\sqrt{(E_{cent}^i+E_{ref}^i-E_{aims}^i)^2}}\times{\frac{\partial E_{cent}^i}{\partial \chi_i}} = \frac{(E_{cent}^i+E_{ref}^i-E_{aims}^i)}{\sqrt{(E_{cent}^i+E_{ref}^i-E_{aims}^i)^2}}\times q_i
+		\end{equation}
+
+	Steepest Descent :
+
+	\begin{equation}
+	\chi_i = \chi_i - sd\_step\times\frac{\partial E_{err}}{\partial \chi_i}
+	\end{equation}
+\end{document}
