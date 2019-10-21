@@ -1,0 +1,22 @@
+#!/bin/sh
+#SBATCH --job-name="debug"
+#SBATCH -n 1
+#SBATCH --output=bachoutput
+#SBATCH --nodes=1-1
+#SBATCH -p all
+#SBATCH --time=2-00:00:00
+
+
+OLDDIR=$PWD
+DIRNAME="${PWD##*/}"
+RUNDIR="/scratch/${USER}/Cent_2/$DIRNAME"
+rm -rf $RUNDIR
+mkdir -p $RUNDIR
+cp -r * $RUNDIR
+cd $RUNDIR
+
+cent_2_cep.out > o1
+cd $OLDDIR
+
+cp -r $RUNDIR/* .
+#rm -rf $RUNDIR

@@ -1,0 +1,10 @@
+cp -r template run_01  && cd run_01  && cp ../inputs/input.rzx_01 ./input.rzx && sbatch run > submit && cd ..
+cp -r template run_02  && cd run_02  && cp ../inputs/input.rzx_02 ./input.rzx && sbatch run > submit && cd ..
+cp -r template run_03  && cd run_03  && cp ../inputs/input.rzx_03 ./input.rzx && sbatch run > submit && cd ..
+cp -r template run_04  && cd run_04  && cp ../inputs/input.rzx_04 ./input.rzx && sbatch run > submit && cd ..
+cp -r template run_05  && cd run_05  && cp ../inputs/input.rzx_05 ./input.rzx && sbatch run > submit && cd ..
+cp -r template run_06  && cd run_06  && cp ../inputs/input.rzx_06 ./input.rzx && sbatch run > submit && cd ..
+cp -r template run_07  && cd run_07  && cp ../inputs/input.rzx_07 ./input.rzx && sbatch run > submit && cd ..
+cp -r template run_08  && cd run_08  && cp ../inputs/input.rzx_08 ./input.rzx && sbatch run > submit && cd ..
+cp -r template run_09  && cd run_09  && cp ../inputs/input.rzx_09 ./input.rzx && sbatch run > submit && cd ..
+cp -r template run_10  && cd run_10  && cp ../inputs/input.rzx_10 ./input.rzx && sbatch run > submit && cd ..
