@@ -20,9 +20,9 @@ program main
     real(8) :: qat_2_mean_1,qat_2_std_1, qat_2_mean_2,qat_2_std_2
     
     open(3,file='input.rzx')
-    open(13660716,file='rmse.rzx')
-    open(13701108,file='chi.rzx')
-    open(13770514,file='qat.rzx')
+    open(13660716,file='err.rzx',status='UNKNOWN')
+    open(13701108,file='chi.rzx',status='UNKNOWN')
+    open(13770514,file='qat.rzx',status='UNKNOWN')
     read(3,*) !'number of configurations: '
     read(3,*) nconf 
     read(3,*) !'number of atoms '
@@ -229,6 +229,9 @@ program main
          write(13770514,'(i9,i6,8es14.6)') i_loop,iconf, qat_1_mean_1,qat_1_std_1, qat_1_mean_2,qat_1_std_2,&
                                             qat_2_mean_1,qat_2_std_1, qat_2_mean_2,qat_2_std_2
         end do
+        call flush(13660716)
+        call flush(13701108)
+        call flush(13770514)
     end do !gw_Mg_1_loop
     end do !gw_Mg_2_loop
     end do !gw_O_1_loop 
