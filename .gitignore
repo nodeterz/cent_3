@@ -6,3 +6,6 @@
 *.swp
 */o1
 */a.out
+*rmse*
+*chi*
+*qat*

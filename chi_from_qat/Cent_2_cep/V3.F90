@@ -1,45 +1,43 @@
 program main
     !use F95_LAPACK
     implicit none
-    integer :: nconf, iconf, nat, iat, sd_loop, i
-    real(8) :: sd_s, sd_s_inp, q_tot, tmp_sd, e_rmse, e_rmse_old
+    integer :: nconf, iconf, nat, iat, sd_loop, i, iconf_2
+    real(8) :: sd_s, sd_s_inp, q_tot, tmp_sd, e_rmse, e_rmse_old, e_cent, e_diff
     real(8) :: bohr2ang=0.529177210d0
     character(len=40) :: file_name, tt
     character(len=40) :: format_string, str_nat
     character(LEN=3),allocatable :: sat(:,:)
     character :: tt_1
-    real(8), allocatable :: gw_1(:), gw_2(:), hardness_1(:), chi_1(:), e_aims(:), e_ref(:), hardness_2(:), e_cent(:), e_err(:)
-    real(8), allocatable :: a(:,:), b(:,:), c(:,:), d(:,:), chi_tot(:,:), qat(:,:)
+    real(8), allocatable :: gw_1(:), gw_2(:), hardness_1(:), chi_1(:), e_aims(:), e_ref(:), hardness_2(:), e_err(:), chi_tot(:)
+    real(8), allocatable :: a(:,:), b(:,:), c(:,:), d(:,:), qat(:,:)
     real(8), allocatable :: rat(:,:,:), a_tot(:,:,:), a_tot_inv(:,:,:)
     integer :: gw_Mg_1_loop, gw_Mg_2_loop, gw_O_1_loop, gw_O_2_loop, hardness_O_2_loop, hardness_Mg_2_loop, range_loop, i_loop 
-    real(8) :: gw_Mg_1, gw_Mg_2, gw_O_1, gw_O_2, hardness_O_2, hardness_Mg_2, gw_step, hardness_step 
+    real(8) :: gw_Mg_1, gw_Mg_2, gw_O_1, gw_O_2, hardness_O_1, hardness_Mg_1, hardness_O_2, hardness_Mg_2, gw_step, hardness_step 
     real(8) :: range_6, progress
     real(8) :: chi_1_mean_1, chi_1_std_1, chi_1_mean_2, chi_1_std_2
     real(8) :: chi_2_mean_1,chi_2_std_1, chi_2_mean_2,chi_2_std_2
     real(8) :: qat_1_mean_1,qat_1_std_1, qat_1_mean_2,qat_1_std_2
     real(8) :: qat_2_mean_1,qat_2_std_1, qat_2_mean_2,qat_2_std_2
+    real(8) :: grad_Mg_1, grad_O_1 , grad_Mg_2, grad_O_2 , chi_Mg_1, chi_O_1 , chi_Mg_2, chi_O_2
     
     open(3,file='input.rzx')
     open(13660716,file='err.rzx',status='UNKNOWN')
     open(13701108,file='chi.rzx',status='UNKNOWN')
     open(13770514,file='qat.rzx',status='UNKNOWN')
-    read(3,*) !'number of configurations: '
-    read(3,*) nconf 
-    read(3,*) !'number of atoms '
-    read(3,*) nat
-    read(3,*) !Steepest_Descent_Step
-    read(3,*) sd_s_inp 
+
+    read(3,*) tt_1, nconf 
+    read(3,*) tt_1, nat
+    read(3,*) tt_1, sd_s_inp 
+    read(3,*) tt_1, chi_Mg_1, chi_Mg_2
+    read(3,*) tt_1, chi_O_1 , chi_O_2
+    read(3,*) tt_1, hardness_Mg_1 , hardness_O_1
 
     allocate(gw_1(nat), gw_2(nat), hardness_1(nat), hardness_2(nat), chi_1(nat))
-    allocate(e_aims(nconf), e_ref(nconf), e_cent(nconf), e_err(nconf))
-    allocate(sat(nconf,nat), qat(nconf,2*nat+1), chi_tot(nconf,2*nat+1))
+    allocate(e_aims(nconf), e_ref(nconf), e_err(nconf))
+    allocate(sat(nconf,nat), qat(nconf,2*nat+1), chi_tot(2*nat+1))
     allocate(a(nat,nat), b(nat,nat), c(nat,nat), d(nat,nat))
     allocate(rat(nconf,3,nat), a_tot(nconf,2*nat+1,2*nat+1), a_tot_inv(nconf,2*nat+1,2*nat+1))
 
-    read(3,*) !gw_1(iat),gw_2(iat),hardness_1(iat),chi_1(iat)
-    do iat = 1, nat
-            read(3,*) hardness_1(iat),chi_1(iat)
-    end do
     !--------------------------------------------------------------------------------------
     q_tot = 0.d0
     do iconf = 1 , nconf
@@ -57,7 +55,7 @@ program main
     rat(1:nconf,1:3,1:nat) = rat(1:nconf,1:3,1:nat)/bohr2ang
     e_aims = e_aims/27.211384500d0
     e_ref = e_ref/27.211384500d0 
-    range_loop = 5
+    range_loop = 1
     range_6 = range_loop**6
     gw_step = 0.5d0
     hardness_step = 0.04
@@ -68,13 +66,13 @@ program main
         gw_Mg_1 = 1.d0-gw_step
     do gw_Mg_1_loop=1, range_loop
         gw_Mg_1=gw_Mg_1 +gw_step
-        gw_Mg_2 = 1.d0-gw_step
+        gw_Mg_2 = 2.d0-gw_step
     do gw_Mg_2_loop=1, range_loop
         gw_Mg_2=gw_Mg_2 +gw_step
         gw_O_1 = 1.d0-gw_step
     do gw_O_1_loop =1, range_loop
         gw_O_1=gw_O_1  +gw_step
-        gw_O_2 = 1.d0-gw_step
+        gw_O_2 = 2.d0-gw_step
     do gw_O_2_loop =1, range_loop
         gw_O_2 =gw_O_2  +gw_step
         hardness_O_2 = 0.d0-hardness_step
@@ -91,6 +89,8 @@ program main
         gw_1(nat/2+1:nat) = gw_O_1
         gw_2(1:nat/2)   =   gw_Mg_2
         gw_2(nat/2+1:nat) = gw_O_2
+        hardness_1(1:nat/2) = hardness_Mg_1 
+        hardness_1(nat/2+1:nat) = hardness_O_1 
         hardness_2(1:nat/2) = hardness_Mg_2 
         hardness_2(nat/2+1:nat) = hardness_O_2 
         
@@ -108,12 +108,9 @@ program main
             a_tot(iconf,2*nat+1,1:2*nat+1)=1
             a_tot(iconf,1:2*nat+1,2*nat+1)=1
             a_tot(iconf,(2*nat)+1,(2*nat)+1)=0
-
-            chi_tot(iconf,1:nat) = -1.d0*chi_1(1:nat)
-            chi_tot(iconf,nat+1:2*nat) = -1.d0*chi_1(1:nat)
-            chi_tot(iconf,2*nat+1) = q_tot 
             call inv(a_tot(iconf,:,:),2*nat+1,a_tot_inv(iconf,:,:))
         end do !iconf
+
         
         !## CEP part
        ! !##PREFIT
@@ -165,70 +162,82 @@ program main
        !     chi_tot(iconf,nat+1:nat+nat/2) = -1.d0*chi_tot(iconf,nat+1)
        !     chi_tot(iconf,nat+1+nat/2:2*nat) = -1.d0*chi_tot(iconf,nat/2+nat+1)
        ! end do
+
         !## Steepest_Descent part
         e_rmse = 0.d0
-        do sd_loop = 1 , 10000!Huge(sd_loop)
+        do sd_loop = 1 , Huge(sd_loop)
+            chi_tot(1:nat/2) = -1.d0*chi_Mg_1
+            chi_tot(nat/2+1:nat) = -1.d0*chi_O_1
+            chi_tot(nat+1:nat+nat/2) = -1.d0*chi_Mg_2
+            chi_tot(nat+nat/2+1:2*nat) = -1.d0*chi_O_2
+            chi_tot(2*nat+1) = q_tot 
+            do iconf = 1, nconf
+                call mat_mult(a_tot_inv(iconf,:,:),chi_tot,2*nat+1,2*nat+1,1,qat(iconf,:))
+            end do
+            e_err = 0.d0
+            e_diff= 0.d0
             do iconf = 1 , nconf
-                if (sd_loop==1) then
-                    e_cent(iconf) = 0.d0
-                    call mat_mult(a_tot_inv(iconf,:,:),chi_tot(iconf,:),2*nat+1,2*nat+1,1,qat(iconf,:))
-                    call cal_electrostatic_ann(nat,rat(iconf,:,:),gw_1,gw_2,qat(iconf,:),e_cent(iconf))
-                    do i = 1, nat
-                        e_cent(iconf) = e_cent(iconf) + chi_tot(iconf,i)*qat(iconf,i) + chi_tot(iconf,i+nat)*qat(iconf,i+nat) + &
-                                      0.5d0*hardness_1(i)*(qat(iconf,i)**2) + 0.5d0*hardness_2(i)*(qat(iconf,i+nat)**2)
-                    end do
-                    !e_cent = e_cent*27.211384500d0
-                    e_err(iconf) = (e_cent(iconf) + e_ref(iconf) - e_aims(iconf))**2
-                    !write(*,*) 'ENERGY cent(eV) = ', e_cent(iconf)
-                else
-                    tmp_sd = 2*sd_s*(e_cent(iconf)+e_ref(iconf)-e_aims(iconf))/abs(e_cent(iconf)+e_ref(iconf)-e_aims(iconf)+1.d-100)
-                    chi_tot(iconf,nat+1:2*nat) = chi_tot(iconf,nat+1:2*nat) - tmp_sd*qat(iconf,nat+1:2*nat)
-                    !chi_tot(iconf,1:2*nat) = chi_tot(iconf,1:2*nat) - tmp_sd*qat(iconf,1:2*nat)
-                    call mat_mult(a_tot_inv(iconf,:,:),chi_tot(iconf,:),2*nat+1,2*nat+1,1,qat(iconf,:))
-                    e_cent(iconf) = 0.d0
-                    call cal_electrostatic_ann(nat,rat(iconf,:,:),gw_1,gw_2,qat(iconf,:),e_cent(iconf))
-                    do i = 1, nat
-                        e_cent(iconf) = e_cent(iconf) + chi_tot(iconf,i)*qat(iconf,i) + chi_tot(iconf,i+nat)*qat(iconf,i+nat) + &
-                                      0.5d0*hardness_1(i)*(qat(iconf,i)**2) + 0.5d0*hardness_2(i)*(qat(iconf,i+nat)**2)
-                    end do
-                    !e_cent = e_cent*27.211384500d0
-                    e_err(iconf) = (e_cent(iconf) + e_ref(iconf) - e_aims(iconf))**2
-                end if
+                e_cent = 0.d0
+                call cal_electrostatic_ann(nat,rat(iconf,:,:),gw_1,gw_2,qat(iconf,:),e_cent)
+                do i = 1, nat
+                    e_cent = e_cent + chi_tot(i)*qat(iconf,i) + chi_tot(i+nat)*qat(iconf,i+nat) + &
+                                  0.5d0*hardness_1(i)*(qat(iconf,i)**2) + 0.5d0*hardness_2(i)*(qat(iconf,i+nat)**2)
+                end do
+                e_diff = e_diff + e_cent + e_ref(iconf) - e_aims(iconf)
+                e_err = e_err + (e_cent + e_ref(iconf) - e_aims(iconf))**2
             end do ! iconf in sd_loop
+            !tmp_sd = 2*sd_s*(e_cent + e_ref(iconf)-e_aims(iconf))/abs(e_cent+e_ref(iconf)-e_aims(iconf)+1.d-100)
+            grad_Mg_1 = 0.d0 
+            grad_O_1  = 0.d0 
+            grad_Mg_2 = 0.d0 
+            grad_O_2  = 0.d0 
+            do iconf_2 = 1 , nconf
+                grad_Mg_1 = grad_Mg_1 + sum(qat(iconf_2,1:nat/2))
+                grad_O_1  = grad_O_1  + sum(qat(iconf_2,nat/2+1:nat))
+                grad_Mg_2 = grad_Mg_2 + sum(qat(iconf_2,nat+1:nat+nat/2))
+                grad_O_2  = grad_O_2  + sum(qat(iconf_2,nat+nat/2+1:2*nat))
+            end do
+            chi_Mg_1 = chi_Mg_1 + sd_s*sign(1.d0,e_diff)*grad_Mg_1
+            chi_O_1 = chi_O_1 + sd_s*sign(1.d0,e_diff)*grad_O_1
+            chi_Mg_2 = chi_Mg_2 + sd_s*sign(1.d0,e_diff)*grad_Mg_2
+            chi_O_2 = chi_O_2 + sd_s*sign(1.d0,e_diff)*grad_O_2
+
+            !chi_tot(iconf,1:2*nat) = chi_tot(iconf,1:2*nat) - tmp_sd*qat(iconf,1:2*nat)
+
             e_rmse_old = e_rmse
             e_rmse = sqrt(sum(e_err)/nconf)*27.211384500d0
-            if ((e_rmse-e_rmse_old)<0.d0) then
-                    sd_s = sd_s*1.05d0
-                else
-                    sd_s = sd_s*0.50d0
-            end if
-            !if ((e_rmse-e_rmse_old)<1.d-10) sd_s = sd_s*0.99
-            !write(*,*) e_rmse, sd_s, tmp_sd
-            if ((abs(e_rmse-e_rmse_old)<1.d-16) .and. (e_rmse<1.d-2)) exit
-            if (abs(e_rmse)<1.d-3) exit
+            !if ((e_rmse-e_rmse_old)<0.d0) then
+            !        sd_s = sd_s*1.05d0
+            !    else
+            !        sd_s = sd_s*0.50d0
+            !end if
+            !if ((abs(e_rmse-e_rmse_old)<1.d-16) .and. (e_rmse<1.d-2)) exit
+            !if (abs(e_rmse)<1.d-3) exit
             !if (abs(e_rmse)<1.d-4) exit
             if (isnan(e_rmse)) then
                 write(*,*) 'ERROR :',e_err, tmp_sd
                 exit
             end if
+            write(*,*) progress ,i_loop,sd_loop , e_rmse, sd_s 
         end do ! sd_loop
-        write(13660716,'(f6.3,2i8,8es14.6)') progress ,i_loop,sd_loop , e_rmse, sd_s , gw_Mg_1 &
-                                            ,gw_Mg_2 ,gw_O_1 ,gw_O_2 ,hardness_O_2 ,hardness_Mg_2
-        do iconf = 1,nconf
-           call std_mean(chi_tot(iconf,1:nat/2),nat/2,chi_1_mean_1,chi_1_std_1)
-           call std_mean(chi_tot(iconf,nat/2+1:nat),nat/2,chi_1_mean_2,chi_1_std_2)
-           call std_mean(chi_tot(iconf,nat+1:nat+nat/2),nat/2,chi_2_mean_1,chi_2_std_1)
-           call std_mean(chi_tot(iconf,nat+nat/2+1:2*nat),nat/2,chi_2_mean_2,chi_2_std_2)
+        write(13660716,'(f6.3,2i8,8es14.6)') progress ,i_loop,sd_loop , e_rmse, sd_s 
+        !write(13660716,'(f6.3,2i8,8es14.6)') progress ,i_loop,sd_loop , e_rmse, sd_s , gw_Mg_1 &
+        !                                    ,gw_Mg_2 ,gw_O_1 ,gw_O_2 ,hardness_O_2 ,hardness_Mg_2
+        !do iconf = 1,nconf
+        !   call std_mean(chi_tot(iconf,1:nat/2),nat/2,chi_1_mean_1,chi_1_std_1)
+        !   call std_mean(chi_tot(iconf,nat/2+1:nat),nat/2,chi_1_mean_2,chi_1_std_2)
+        !   call std_mean(chi_tot(iconf,nat+1:nat+nat/2),nat/2,chi_2_mean_1,chi_2_std_1)
+        !   call std_mean(chi_tot(iconf,nat+nat/2+1:2*nat),nat/2,chi_2_mean_2,chi_2_std_2)
 
-           call std_mean(qat(iconf,1:nat/2),nat/2,qat_1_mean_1,qat_1_std_1)
-           call std_mean(qat(iconf,nat/2+1:nat),nat/2,qat_1_mean_2,qat_1_std_2)
-           call std_mean(qat(iconf,nat+1:nat+nat/2),nat/2,qat_2_mean_1,qat_2_std_1)
-           call std_mean(qat(iconf,nat+nat/2+1:2*nat),nat/2,qat_2_mean_2,qat_2_std_2)
-         write(13701108,'(i9,i6,8es14.6)') i_loop,iconf, chi_1_mean_1, chi_1_std_1, chi_1_mean_2, chi_1_std_2,&
-                                            chi_2_mean_1,chi_2_std_1, chi_2_mean_2,chi_2_std_2
-         write(13770514,'(i9,i6,8es14.6)') i_loop,iconf, qat_1_mean_1,qat_1_std_1, qat_1_mean_2,qat_1_std_2,&
-                                            qat_2_mean_1,qat_2_std_1, qat_2_mean_2,qat_2_std_2
-        end do
+        !   call std_mean(qat(iconf,1:nat/2),nat/2,qat_1_mean_1,qat_1_std_1)
+        !   call std_mean(qat(iconf,nat/2+1:nat),nat/2,qat_1_mean_2,qat_1_std_2)
+        !   call std_mean(qat(iconf,nat+1:nat+nat/2),nat/2,qat_2_mean_1,qat_2_std_1)
+        !   call std_mean(qat(iconf,nat+nat/2+1:2*nat),nat/2,qat_2_mean_2,qat_2_std_2)
+        ! write(13701108,'(i9,i6,8es14.6)') i_loop,iconf, chi_1_mean_1, chi_1_std_1, chi_1_mean_2, chi_1_std_2,&
+        !                                    chi_2_mean_1,chi_2_std_1, chi_2_mean_2,chi_2_std_2
+        ! write(13770514,'(i9,i6,8es14.6)') i_loop,iconf, qat_1_mean_1,qat_1_std_1, qat_1_mean_2,qat_1_std_2,&
+        !                                    qat_2_mean_1,qat_2_std_1, qat_2_mean_2,qat_2_std_2
+        !end do
         call flush(13660716)
         call flush(13701108)
         call flush(13770514)
