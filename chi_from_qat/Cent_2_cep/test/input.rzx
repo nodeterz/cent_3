@@ -1,0 +1,6 @@
+'number of configurations    :',1
+'number of atoms             :',16
+'Steepest_Descent_Step       :',1.d-10
+'chi_Mg_1, chi_Mg_2          :',0.12,0.15
+'chi_O_1 , chi_O_2           :',0.13,0.19
+'hardness_Mg_1 , hardness_O_1:',0.1,0.2
